@@ -123,47 +123,47 @@ Every step below must be marked [x] when complete.
 ---
 
 ### PHASE 0 — Scaffold & Config
-- [ ] **0.1** Create `web/` using `npm create vite@latest web -- --template react-ts`
-- [ ] **0.2** Install web dependencies (Tailwind, Router, Zustand, React Query, Axios, Leaflet, RHF, Zod, Lucide, date-fns, react-hot-toast)
-- [ ] **0.3** Configure Tailwind with UrbanLift brand tokens (`tailwind.config.ts`)
-- [ ] **0.4** Configure path aliases (`@/` → `src/`) in `vite.config.ts` & `tsconfig.json`
-- [ ] **0.5** Create `mobile/` using `flutter create mobile --org com.urbanlift`
-- [ ] **0.6** Add Flutter dependencies to `pubspec.yaml` (Riverpod, go_router, Dio, flutter_map, etc.)
-- [ ] **0.7** Set up Flutter folder structure (`features/`, `core/`, `shared/`)
-- [ ] **0.8** Create shared `types/` and `constants/` for both platforms
-- [ ] **0.9** Initialize git repo, add `.gitignore` for both
+- [x] **0.1** Create `web/` using `npm create vite@latest web -- --template react-ts`
+- [x] **0.2** Install web dependencies (Tailwind, Router, Zustand, React Query, Axios, Leaflet, RHF, Zod, Lucide, date-fns, react-hot-toast)
+- [x] **0.3** Configure Tailwind with UrbanLift brand tokens (`tailwind.config.js`)
+- [x] **0.4** Configure path aliases (`@/` → `src/`) in `vite.config.ts` & `tsconfig.app.json`
+- [x] **0.5** Create `mobile/` using `flutter create mobile --org com.urbanlift`
+- [x] **0.6** Add Flutter dependencies to `pubspec.yaml` (Riverpod, go_router, Dio, flutter_map, etc.)
+- [x] **0.7** Set up Flutter folder structure (`features/`, `core/`, `shared/`)
+- [x] **0.8** Create shared `types/` and `constants/` for both platforms
+- [x] **0.9** Initialize git repo, add `.gitignore` for both
 
 ---
 
 ### PHASE 1 — Design System / UI Primitives
 
 #### Web (React)
-- [ ] **1.1** `Button` component (variants: primary, secondary, outline, ghost; sizes: sm, md, lg)
-- [ ] **1.2** `Input` component (with label, error state, left/right icon slots)
-- [ ] **1.3** `Card` component
-- [ ] **1.4** `Badge` component (status: confirmed, pending, cancelled, etc.)
-- [ ] **1.5** `Avatar` component (with fallback initials)
-- [ ] **1.6** `StarRating` component
-- [ ] **1.7** `BottomNav` (mobile-style bottom bar for web)
-- [ ] **1.8** `Topbar` / `PageHeader`
-- [ ] **1.9** `OTPInput` (6-box OTP field)
-- [ ] **1.10** `LoadingSpinner` / `Skeleton` loaders
-- [ ] **1.11** `Modal` / `BottomSheet` component
-- [ ] **1.12** `RideCard` — reusable ride listing card (driver, route, price, seats)
-- [ ] **1.13** `DriverCard` — driver info card (photo, rating, vehicle, badge)
-- [ ] **1.14** `MapView` wrapper (Leaflet)
+- [x] **1.1** `Button` component (variants: primary, secondary, outline, ghost; sizes: sm, md, lg)
+- [x] **1.2** `Input` component (with label, error state, left/right icon slots)
+- [x] **1.3** `Card` component
+- [x] **1.4** `Badge` component (status: confirmed, pending, cancelled, etc.)
+- [x] **1.5** `Avatar` component (with fallback initials)
+- [x] **1.6** `StarRating` component
+- [x] **1.7** `BottomNav` (mobile-style bottom bar for web)
+- [x] **1.8** `Topbar` / `PageHeader`
+- [x] **1.9** `OTPInput` (6-box OTP field)
+- [x] **1.10** `LoadingSpinner` / `Skeleton` loaders
+- [x] **1.11** `Modal` / `BottomSheet` component
+- [x] **1.12** `RideCard` — reusable ride listing card (driver, route, price, seats)
+- [x] **1.13** `DriverCard` — driver info card (photo, rating, vehicle, badge)
+- [x] **1.14** `MapView` wrapper (Leaflet)
 
 #### Flutter (Mobile)
-- [ ] **1.15** App theme (`ThemeData`, colors, typography, spacing constants)
-- [ ] **1.16** `ULButton` widget (primary/secondary/outline)
-- [ ] **1.17** `ULTextField` widget (with label, suffix icon, error text)
-- [ ] **1.18** `ULCard` widget
-- [ ] **1.19** `ULAvatar` widget
-- [ ] **1.20** `StarRating` widget
-- [ ] **1.21** `OTPField` widget (6 individual digit boxes)
-- [ ] **1.22** `BottomNavBar` widget (Home, Rides, Messages, Profile)
-- [ ] **1.23** `RideListTile` widget
-- [ ] **1.24** `LoadingOverlay` / `Shimmer` skeleton widget
+- [x] **1.15** App theme (`ThemeData`, colors, typography, spacing constants)
+- [x] **1.16** `ULButton` widget (primary/secondary/outline)
+- [x] **1.17** `ULTextField` widget (with label, suffix icon, error text)
+- [x] **1.18** `ULCard` widget
+- [x] **1.19** `ULAvatar` widget
+- [x] **1.20** `StarRating` widget
+- [x] **1.21** `OTPField` widget (6 individual digit boxes)
+- [x] **1.22** `BottomNavBar` widget (Home, Rides, Messages, Profile)
+- [x] **1.23** `RideListTile` widget
+- [x] **1.24** `LoadingOverlay` / `Shimmer` skeleton widget
 
 ---
 
@@ -436,6 +436,6 @@ Every step below must be marked [x] when complete.
 
 ## Current Status
 
-**Phase:** 0 — Scaffold & Config  
+**Phase:** 1 — COMPLETE ✓  
 **Last updated:** 2026-05-28  
-**Next step:** 0.1 — Create web/ with Vite + React + TypeScript
+**Next step:** 2.1 — Startup/Splash screen — start Phase 2: Auth Feature
