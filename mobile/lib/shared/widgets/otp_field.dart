@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../core/theme/app_theme.dart';
@@ -18,99 +19,146 @@ class OTPField extends StatefulWidget {
   State<OTPField> createState() => _OTPFieldState();
 }
 
-class _OTPFieldState extends State<OTPField> {
-  late final List<TextEditingController> _controllers;
-  late final List<FocusNode> _focusNodes;
+class _OTPFieldState extends State<OTPField> with SingleTickerProviderStateMixin {
+  final _controller = TextEditingController();
+  final _focusNode  = FocusNode();
+  late final AnimationController _cursorAnim;
 
   @override
   void initState() {
     super.initState();
-    _controllers = List.generate(widget.length, (_) => TextEditingController());
-    _focusNodes  = List.generate(widget.length, (_) => FocusNode());
+    _focusNode.addListener(() => setState(() {}));
+    _cursorAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..repeat(reverse: true);
   }
 
   @override
   void dispose() {
-    for (final c in _controllers) {
-      c.dispose();
-    }
-    for (final f in _focusNodes) {
-      f.dispose();
-    }
+    _controller.dispose();
+    _focusNode.dispose();
+    _cursorAnim.dispose();
     super.dispose();
   }
 
-  String get _otp => _controllers.map((c) => c.text).join();
+  void _handleChange(String value) {
+    final digits = value.replaceAll(RegExp(r'\D'), '');
+    final capped  = digits.substring(0, min(digits.length, widget.length));
 
-  void _onChange(int index, String value) {
-    if (value.length > 1) {
-      final digits = value.replaceAll(RegExp(r'\D'), '').split('');
-      for (var i = 0; i < widget.length && i < digits.length; i++) {
-        _controllers[i].text = digits[i];
-      }
-      final next = digits.length < widget.length ? digits.length : widget.length - 1;
-      _focusNodes[next].requestFocus();
-    } else if (value.isNotEmpty && index < widget.length - 1) {
-      _focusNodes[index + 1].requestFocus();
+    if (_controller.text != capped) {
+      _controller.value = TextEditingValue(
+        text: capped,
+        selection: TextSelection.collapsed(offset: capped.length),
+      );
     }
-    widget.onChanged?.call(_otp);
-    if (_otp.length == widget.length) widget.onCompleted(_otp);
-  }
 
-  void _onKey(int index, KeyEvent event) {
-    if (event is KeyDownEvent &&
-        event.logicalKey == LogicalKeyboardKey.backspace &&
-        _controllers[index].text.isEmpty &&
-        index > 0) {
-      _focusNodes[index - 1].requestFocus();
-      _controllers[index - 1].clear();
+    setState(() {});
+    widget.onChanged?.call(capped);
+
+    if (capped.length == widget.length) {
+      _focusNode.unfocus();
+      widget.onCompleted(capped);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: List.generate(widget.length, (i) {
-        return Container(
-          width: 48,
-          height: 56,
-          margin: const EdgeInsets.symmetric(horizontal: 5),
-          child: KeyboardListener(
-            focusNode: FocusNode(),
-            onKeyEvent: (e) => _onKey(i, e),
-            child: TextField(
-              controller: _controllers[i],
-              focusNode: _focusNodes[i],
-              textAlign: TextAlign.center,
-              keyboardType: TextInputType.number,
-              maxLength: 1,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-              onChanged: (v) => _onChange(i, v),
-              style: const TextStyle(
-                fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.dark,
-              ),
-              decoration: InputDecoration(
-                counterText: '',
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border, width: 2),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.primary, width: 2),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(color: AppColors.border, width: 1.5),
+    final code     = _controller.text;
+    final hasFocus = _focusNode.hasFocus;
+
+    return GestureDetector(
+      onTap: () => _focusNode.requestFocus(),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // ── Invisible real TextField (captures input) ──────────
+          Opacity(
+            opacity: 0,
+            child: SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: TextField(
+                controller: _controller,
+                focusNode: _focusNode,
+                keyboardType: TextInputType.number,
+                maxLength: widget.length,
+                inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                onChanged: _handleChange,
+                showCursor: false,
+                decoration: const InputDecoration(
+                  counterText: '',
+                  border: InputBorder.none,
                 ),
               ),
             ),
           ),
-        );
-      }),
+
+          // ── Visual digit boxes ─────────────────────────────────
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: List.generate(widget.length, (i) {
+              final filled   = i < code.length;
+              final isCursor = i == code.length && hasFocus;
+
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 150),
+                width: 48,
+                height: 56,
+                margin: const EdgeInsets.symmetric(horizontal: 5),
+                decoration: BoxDecoration(
+                  color: filled
+                      ? AppColors.primaryLight
+                      : Colors.white,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: isCursor
+                        ? AppColors.primary
+                        : filled
+                            ? AppColors.primary.withAlpha(100)
+                            : AppColors.border,
+                    width: isCursor || filled ? 2 : 1.5,
+                  ),
+                  boxShadow: isCursor
+                      ? [BoxShadow(
+                          color: AppColors.primary.withAlpha(40),
+                          blurRadius: 8,
+                          spreadRadius: 1,
+                        )]
+                      : null,
+                ),
+                child: Center(
+                  child: filled
+                      ? Text(
+                          code[i],
+                          style: const TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.dark,
+                          ),
+                        )
+                      : isCursor
+                          ? AnimatedBuilder(
+                              animation: _cursorAnim,
+                              builder: (ctx, child) => Opacity(
+                                opacity: _cursorAnim.value,
+                                child: Container(
+                                  width: 2,
+                                  height: 24,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary,
+                                    borderRadius: BorderRadius.circular(1),
+                                  ),
+                                ),
+                              ),
+                            )
+                          : null,
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
     );
   }
 }

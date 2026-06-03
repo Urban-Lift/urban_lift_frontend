@@ -33,11 +33,24 @@
 
 @layer components {
   /* Reusable class shortcuts */
+  /* Full-width base — each screen manages its own inner max-width */
   .page-container {
-    @apply max-w-md mx-auto min-h-screen flex flex-col bg-white;
+    @apply min-h-screen flex flex-col;
+  }
+
+  /* Constrained readable content area */
+  .content-shell {
+    @apply w-full max-w-3xl mx-auto px-4 md:px-8;
   }
 
   .map-container {
     @apply w-full h-64 rounded-2xl overflow-hidden;
   }
+
+  /* Hide scrollbar but keep scrollability */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar { display: none; }
 }

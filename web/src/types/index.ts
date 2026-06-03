@@ -211,3 +211,54 @@ export interface RideSearchParams {
   seats: number
   tripType: TripType
 }
+
+// ── Driver Feature ────────────────────────────────────────────────────────────
+export interface DriverStats {
+  todayEarnings: number
+  weekEarnings: number
+  totalEarnings: number
+  todayTrips: number
+  totalTrips: number
+  rating: number
+  acceptanceRate: number
+}
+
+export interface PassengerRequest {
+  id: string
+  passenger: {
+    id: string
+    fullName: string
+    rating: number
+    totalTrips: number
+  }
+  pickupLocation: string
+  dropoffLocation: string
+  pickupLat: number
+  pickupLng: number
+  dropoffLat: number
+  dropoffLng: number
+  seatsRequested: number
+  priceOffered: number
+  distanceKm: number
+  estimatedMinutes: number
+  requestedAt: string
+}
+
+export interface DriverTrip {
+  id: string
+  passenger: {
+    id: string
+    fullName: string
+    rating: number
+    phoneNumber: string
+  }
+  pickupLocation: string
+  dropoffLocation: string
+  pickupLat: number
+  pickupLng: number
+  dropoffLat: number
+  dropoffLng: number
+  status: 'navigating_to_pickup' | 'in_trip' | 'completed'
+  earnings: number
+  startedAt: string
+}

@@ -4,7 +4,9 @@ class AppColors {
   static const primary      = Color(0xFF1A7A3C);
   static const primaryLight = Color(0xFFD1FAE5);
   static const primaryDark  = Color(0xFF0F4522);
+  static const lightGreen   = Color(0xFFD1FAE5);  // alias for primaryLight
   static const surface      = Color(0xFFF9FAFB);
+  static const background   = Color(0xFFF9FAFB);  // alias for surface
   static const border       = Color(0xFFD1D5DB);
   static const dark         = Color(0xFF111827);
   static const gray         = Color(0xFF6B7280);

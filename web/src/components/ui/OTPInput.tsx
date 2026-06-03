@@ -8,9 +8,10 @@ interface OTPInputProps {
   onChange: (value: string) => void
   className?: string
   disabled?: boolean
+  error?: string
 }
 
-export default function OTPInput({ length = 6, value, onChange, className, disabled }: OTPInputProps) {
+export default function OTPInput({ length = 6, value, onChange, className, disabled, error }: OTPInputProps) {
   const digits = value.split('').concat(Array(length).fill('')).slice(0, length)
   const refs = useRef<(HTMLInputElement | null)[]>([])
 
@@ -40,7 +41,8 @@ export default function OTPInput({ length = 6, value, onChange, className, disab
   }
 
   return (
-    <div className={cn('flex gap-3 justify-center', className)}>
+    <div className={cn('flex flex-col items-center gap-3', className)}>
+      <div className="flex gap-3">
       {digits.map((digit, i) => (
         <input
           key={i}
@@ -62,6 +64,8 @@ export default function OTPInput({ length = 6, value, onChange, className, disab
           )}
         />
       ))}
+      </div>
+      {error && <p className="text-xs text-red-600 text-center">{error}</p>}
     </div>
   )
 }
