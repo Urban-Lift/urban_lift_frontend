@@ -1,8 +1,16 @@
 # UrbanLift — Frontend Build Plan
 
 > Community carpooling platform for Ghana.
-> Two frontends: **React web app** (`web/`) and **Flutter mobile app** (`mobile/`).
+> **One frontend: a React Native + Expo app at the repo root**, running on iOS,
+> Android and Web from a single codebase.
 > This file is the single source of truth. Update status as work progresses.
+
+> **⚠️ Migrated to Expo (2026-06-08).** The original separate React web app
+> (`web/`) and Flutter mobile app (`mobile/`) were removed and rebuilt as one
+> Expo app. They remain recoverable in git history. The folder/route maps below
+> describe the *old* split build and are kept for historical reference — the
+> **current** architecture is documented in [`WIRING.md`](WIRING.md). Routes now
+> live in `app/` (expo-router, file-based) and shared code in `src/`.
 
 ---
 
@@ -436,7 +444,15 @@ Every step below must be marked [x] when complete.
 
 ## Current Status
 
-**Phase:** 7 — COMPLETE ✓ (Web + Flutter)  
-**Last updated:** 2026-05-29  
-**Completed phases:** 0–7 (all 33 screens built on both platforms)  
-**Next step:** Phase 8 — Maps & Navigation, or Phase 9 — Polish & Cross-Cutting Concerns
+**Platform:** React Native + Expo (SDK 56) — single codebase for iOS / Android / Web
+**Phase:** 0–7 rebuilt in Expo ✓ — all 33 screens, typechecks clean, web bundle builds
+**Last updated:** 2026-06-08
+**Architecture doc:** [`WIRING.md`](WIRING.md) (how everything is wired up)
+**Stack:** expo-router (routing) · Zustand (client state, auth persisted) ·
+React Query (server state) · axios (mock services) · react-native-svg +
+reanimated (MapView) · lucide-react-native (icons)
+**Next step:** Phase 8 — real maps (react-native-maps / Leaflet), or Phase 9 — polish.
+
+### Running it
+`npm install` then `npm run web` / `npm run ios` / `npm run android` / `npm run start`
+(Expo Go + QR). Mock data only — any 6-digit OTP works. `npm run typecheck` to verify.

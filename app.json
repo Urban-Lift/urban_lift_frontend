@@ -1,0 +1,37 @@
+{
+  "expo": {
+    "name": "UrbanLift",
+    "slug": "urbanlift",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "urbanlift",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "backgroundColor": "#1A7A3C",
+      "resizeMode": "contain"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.urbanlift.app"
+    },
+    "android": {
+      "package": "com.urbanlift.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#1A7A3C"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      "expo-image"
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
+  }
+}

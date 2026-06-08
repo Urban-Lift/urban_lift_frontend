@@ -1,26 +1,33 @@
-# ── React / Node ─────────────────────────────────────────────────────────────
-web/node_modules/
-web/dist/
-web/.env
-web/.env.local
-web/.env.*.local
+# ── Expo / React Native ──────────────────────────────────────────────────────
+node_modules/
+.expo/
+dist/
+web-build/
+expo-env.d.ts
 
-# ── Flutter / Dart ────────────────────────────────────────────────────────────
-mobile/.dart_tool/
-mobile/.flutter-plugins
-mobile/.flutter-plugins-dependencies
-mobile/build/
-mobile/android/.gradle/
-mobile/android/local.properties
-mobile/android/key.properties
-mobile/ios/.symlinks/
-mobile/ios/Pods/
-mobile/ios/Flutter/Flutter.framework
-mobile/ios/Flutter/Flutter.podspec
-mobile/*.g.dart
-mobile/*.freezed.dart
+# Native
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+ios/
+android/
+
+# Metro
+.metro-health-check*
+
+# Env
+.env
+.env.local
+.env.*.local
 
 # ── General ───────────────────────────────────────────────────────────────────
 .DS_Store
 Thumbs.db
 *.log
+npm-debug.*
+yarn-error.*
+.claude
+CLAUDE.md
