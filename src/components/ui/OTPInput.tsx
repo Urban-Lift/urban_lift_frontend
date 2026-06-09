@@ -61,6 +61,9 @@ const styles = StyleSheet.create({
     fontSize: fontSize['2xl'],
     fontFamily: fonts.bold,
     color: colors.text,
+    textAlign: 'center',
+    textAlignVertical: 'center',
+    padding: 0,
   },
   boxFilled: { borderColor: colors.primary, backgroundColor: colors.surface },
 });

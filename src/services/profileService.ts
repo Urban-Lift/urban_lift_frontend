@@ -1,27 +1,26 @@
-/** Profile update + saved-routes CRUD + review submission. */
-import type { Review, SavedRoute, User } from '@/types';
+/**
+ * Profile + saved routes. Profile edits hit the real API; saved routes have no
+ * backend endpoint yet, so they stay local (see MOCK.savedRoutes in config).
+ */
+import type { SavedRoute } from '@/types';
 import { savedRoutes } from '@/mocks/data';
 import { refId } from '@/utils/format';
+import { authService } from './authService';
 import { delay } from './api';
 
 export const profileService = {
-  async updateProfile(patch: Partial<User>): Promise<Partial<User>> {
-    return delay(patch, 700);
+  async updateProfile(patch: { fullName?: string; emergencyNumber?: string; email?: string; photoUri?: string }): Promise<void> {
+    await authService.editProfile(patch);
   },
 
+  // ── Saved routes: no API endpoint yet (local only) ──────────────────────────
   async getSavedRoutes(): Promise<SavedRoute[]> {
-    return delay(savedRoutes, 400);
+    return delay(savedRoutes, 300);
   },
-
   async addSavedRoute(input: Omit<SavedRoute, 'id'>): Promise<SavedRoute> {
-    return delay({ id: refId('SR'), ...input }, 500);
+    return delay({ id: refId('SR'), ...input }, 300);
   },
-
-  async deleteSavedRoute(id: string): Promise<{ ok: true }> {
-    return delay({ ok: true }, 300);
-  },
-
-  async submitReview(review: Review): Promise<{ ok: true }> {
-    return delay({ ok: true }, 700);
+  async deleteSavedRoute(_id: string): Promise<{ ok: true }> {
+    return delay({ ok: true }, 200);
   },
 };

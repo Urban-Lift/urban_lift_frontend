@@ -14,8 +14,11 @@ npm run ios
 npm run android
 ```
 
-The app uses **mock data** only (no backend yet) — any 6-digit code works on the
-OTP screens. Run `npm run typecheck` to type-check.
+The app talks to the live **UrbanLift API** (`https://urban-lift-api.onrender.com`).
+Sign-in uses a **real SMS OTP** sent to a Ghana number in local format
+(e.g. `0241234567`). A few features without API endpoints yet (wallet, community,
+driver stats, saved routes, notifications) still use local fixtures — flagged in
+`src/config.ts`. Run `npm run typecheck` to type-check.
 
 ## Docs
 

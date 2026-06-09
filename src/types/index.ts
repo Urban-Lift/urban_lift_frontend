@@ -3,7 +3,7 @@
  * here so the shape of the mock data and the real API (later) stay in sync.
  */
 
-export type Role = 'passenger' | 'driver';
+export type Role = 'passenger' | 'driver' | 'admin';
 
 export type BookingStatus = 'confirmed' | 'pending' | 'cancelled' | 'completed';
 

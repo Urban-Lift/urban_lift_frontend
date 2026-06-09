@@ -18,7 +18,7 @@ export default function DriverInTrip() {
     return (
       <SafeAreaView style={styles.empty}>
         <Txt variant="muted" center>No active trip.</Txt>
-        <Button label="Back to dashboard" onPress={() => router.replace('/driver/dashboard')} />
+        <Button label="Back to dashboard" onPress={() => router.replace('/driver-home')} />
       </SafeAreaView>
     );
   }
@@ -26,7 +26,7 @@ export default function DriverInTrip() {
   function complete() {
     reset();
     Alert.alert('Trip complete', `You earned ${ghs(request!.estEarnings)} 🎉`, [
-      { text: 'Great', onPress: () => router.replace('/driver/dashboard') },
+      { text: 'Great', onPress: () => router.replace('/driver-home') },
     ]);
   }
 
@@ -38,7 +38,7 @@ export default function DriverInTrip() {
         <MapView progress={progress} height={height * 0.55} />
         <SafeAreaView style={styles.overlay} pointerEvents="box-none">
           <View style={styles.topRow}>
-            <Pressable style={styles.roundBtn} onPress={() => router.replace('/driver/dashboard')}><ChevronLeft size={22} color={colors.text} /></Pressable>
+            <Pressable style={styles.roundBtn} onPress={() => router.replace('/driver-home')}><ChevronLeft size={22} color={colors.text} /></Pressable>
             <View style={styles.statusCenter}>
               <Txt variant="bodyStrong">On Trip</Txt>
               <Txt variant="overline" color={colors.forest}>Navigating to drop-off</Txt>
@@ -81,7 +81,7 @@ export default function DriverInTrip() {
           <View style={styles.flex}><Button label="Call" icon={<Phone size={16} color={colors.onPrimary} />} onPress={() => {}} /></View>
         </View>
         <View style={styles.grid}>
-          <View style={styles.flex}><Button label="Cancel Trip" variant="outline" onPress={() => { reset(); router.replace('/driver/dashboard'); }} /></View>
+          <View style={styles.flex}><Button label="Cancel Trip" variant="outline" onPress={() => { reset(); router.replace('/driver-home'); }} /></View>
           <View style={styles.flex}><Button label="Emergency SOS" variant="danger" icon={<ShieldAlert size={16} color={colors.white} />} onPress={() => Alert.alert('Emergency', 'Safety team alerted.')} /></View>
         </View>
         <Button label="Complete Trip" onPress={complete} />

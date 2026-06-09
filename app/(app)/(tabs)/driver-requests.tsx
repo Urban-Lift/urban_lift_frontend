@@ -112,7 +112,7 @@ export default function MatchingPassengers() {
 
               <View style={styles.actions}>
                 <View style={styles.flex}><Button label="Ignore" variant="outline" onPress={() => driverService.respond(item.id, false)} /></View>
-                <View style={styles.flex}><Button label="Accept Request" onPress={() => accept(item)} /></View>
+                <View style={styles.flex}><Button label="Accept" onPress={() => accept(item)} /></View>
               </View>
             </Card>
           )}

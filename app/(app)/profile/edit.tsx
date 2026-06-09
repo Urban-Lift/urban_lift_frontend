@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
 import { Camera } from 'lucide-react-native';
 import { Avatar, Button, Header, Input, Screen, Txt } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { profileService } from '@/services/profileService';
+import { apiError } from '@/services/api';
+import { pickImage } from '@/utils/image';
 import { colors, radii, spacing } from '@/theme';
 
 export default function EditProfile() {
@@ -13,23 +15,40 @@ export default function EditProfile() {
   const [name, setName] = useState(user?.name ?? '');
   const [email, setEmail] = useState(user?.email ?? '');
   const [emergency, setEmergency] = useState(user?.emergencyContact ?? '');
+  const [photoUri, setPhotoUri] = useState<string | undefined>(user?.avatarUrl);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
+
+  async function changePhoto() {
+    const uri = await pickImage();
+    if (uri) setPhotoUri(uri);
+  }
 
   async function save() {
     setSaving(true);
-    const patch = { name, email, emergencyContact: emergency };
-    await profileService.updateProfile(patch);
-    patchUser(patch);
-    setSaving(false);
-    router.back();
+    setError(undefined);
+    try {
+      await profileService.updateProfile({
+        fullName: name,
+        email,
+        emergencyNumber: emergency,
+        photoUri: photoUri !== user?.avatarUrl ? photoUri : undefined,
+      });
+      patchUser({ name, email, emergencyContact: emergency, avatarUrl: photoUri });
+      router.back();
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setSaving(false);
+    }
   }
 
   return (
     <Screen scroll footer={<Button label="Save changes" onPress={save} loading={saving} disabled={name.trim().length < 2} />}>
       <Header title="Edit profile" />
       <View style={styles.body}>
-        <Pressable style={styles.avatarWrap} onPress={() => Alert.alert('Photo', 'Image picker would open here.')}>
-          <Avatar name={name || 'User'} uri={user?.avatarUrl} size={88} />
+        <Pressable style={styles.avatarWrap} onPress={changePhoto}>
+          <Avatar name={name || 'User'} uri={photoUri} size={88} />
           <View style={styles.cameraBadge}>
             <Camera size={16} color={colors.white} />
           </View>
@@ -37,6 +56,7 @@ export default function EditProfile() {
         <Txt variant="caption" center>
           Tap to change photo
         </Txt>
+        {error ? <Txt variant="caption" center color={colors.error}>{error}</Txt> : null}
 
         <Input label="Full name" value={name} onChangeText={setName} />
         <Input label="Email" value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />

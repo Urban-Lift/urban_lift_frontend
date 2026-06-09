@@ -4,33 +4,60 @@ import { router } from 'expo-router';
 import { ArrowRight, Camera, IdCard, Mail, User as UserIcon } from 'lucide-react-native';
 import { Avatar, Button, Header, Input, Screen, Txt } from '@/components';
 import { useAuthStore } from '@/store/authStore';
+import { authService } from '@/services/authService';
+import { apiError } from '@/services/api';
+import { pickImage } from '@/utils/image';
+import { toLocalPhone } from '@/utils/format';
 import { colors, radii, spacing } from '@/theme';
 
-/** Driver setup — step 1 of 2: personal info. Vehicle details follow. */
+/** Driver setup — step 1 of 2: personal info + profile photo (creates profile). */
 export default function SetupDriverPersonal() {
   const draft = useAuthStore((s) => s.draft);
   const updateDraft = useAuthStore((s) => s.updateDraft);
   const [name, setName] = useState('');
   const [email, setEmail] = useState(draft?.email ?? '');
   const [emergency, setEmergency] = useState('');
+  const [photoUri, setPhotoUri] = useState<string>();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
 
-  function next() {
-    updateDraft({ name: name.trim(), email });
-    router.push('/setup-driver-vehicle');
+  async function choosePhoto() {
+    const uri = await pickImage();
+    if (uri) setPhotoUri(uri);
+  }
+
+  async function next() {
+    if (!photoUri) {
+      setError('Please add a profile photo to continue.');
+      return;
+    }
+    setLoading(true);
+    setError(undefined);
+    try {
+      const emergencyLocal = toLocalPhone(emergency);
+      await authService.createProfile({ fullName: name.trim(), emergencyNumber: emergencyLocal, email: email || undefined, photoUri });
+      updateDraft({ name: name.trim(), email, emergencyNumber: emergencyLocal, photoUri });
+      router.push('/setup-driver-vehicle');
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <Screen scroll footer={<Button label="Next: Vehicle Details" icon={<ArrowRight size={20} color={colors.onPrimary} />} onPress={next} disabled={name.trim().length < 2} />}>
+    <Screen scroll footer={<Button label="Next: Vehicle Details" icon={<ArrowRight size={20} color={colors.onPrimary} />} onPress={next} disabled={name.trim().length < 2} loading={loading} />}>
       <Header title="Complete Profile" subtitle="Step 1 of 2" />
       <View style={styles.avatarBlock}>
-        <Pressable style={styles.avatarWrap}>
-          <Avatar name={name || 'Driver'} size={92} />
+        <Pressable style={styles.avatarWrap} onPress={choosePhoto}>
+          <Avatar name={name || 'Driver'} uri={photoUri} size={92} />
           <View style={styles.cameraBadge}>
             <Camera size={16} color={colors.white} />
           </View>
         </Pressable>
         <Txt variant="h2" center style={styles.photoTitle}>Add a Profile Photo</Txt>
         <Txt variant="caption" center>Help passengers identify you</Txt>
+        {error ? <Txt variant="caption" center color={colors.error}>{error}</Txt> : null}
       </View>
 
       <View style={styles.body}>

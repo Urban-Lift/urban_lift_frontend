@@ -1,28 +1,39 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ArrowRight, Car, ChevronDown, User as UserIcon } from 'lucide-react-native';
 import { Button, Header, Screen, Segmented, Txt } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
+import { apiError } from '@/services/api';
+import { toLocalPhone } from '@/utils/format';
 import type { Role } from '@/types';
 import { colors, fonts, fontSize, radii, spacing } from '@/theme';
 
 export default function Login() {
+  const { mode } = useLocalSearchParams<{ mode?: string }>();
+  const isLogin = mode === 'login';
   const startSignup = useAuthStore((s) => s.startSignup);
   const [role, setRole] = useState<Role>('passenger');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
 
   const valid = phone.replace(/\D/g, '').length >= 9;
 
   async function onContinue() {
     setLoading(true);
-    const fullPhone = '+233' + phone.replace(/\D/g, '').replace(/^0/, '');
-    startSignup(role, fullPhone);
-    await authService.requestOtp(fullPhone);
-    setLoading(false);
-    router.push('/otp-phone');
+    setError(undefined);
+    const local = toLocalPhone(phone);
+    try {
+      startSignup(role, local);
+      await authService.requestPhoneOtp(local, role);
+      router.push('/otp-phone');
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -30,21 +41,27 @@ export default function Login() {
       <Header title="UrbanLift" />
       <View style={styles.body}>
         <View style={styles.intro}>
-          <Txt variant="h1">Let's get started</Txt>
-          <Txt variant="muted">Choose your role and enter your number to begin.</Txt>
+          <Txt variant="h1">{isLogin ? 'Welcome back' : "Let's get started"}</Txt>
+          <Txt variant="muted">
+            {isLogin
+              ? 'Enter your number and we’ll text you a code to log in.'
+              : 'Choose your role and enter your number to begin.'}
+          </Txt>
         </View>
 
-        <View style={styles.section}>
-          <Txt variant="label">I am a</Txt>
-          <Segmented
-            value={role}
-            onChange={setRole}
-            options={[
-              { key: 'passenger', label: 'Passenger', icon: <UserIcon size={18} color={role === 'passenger' ? colors.text : colors.textMuted} /> },
-              { key: 'driver', label: 'Driver', icon: <Car size={18} color={role === 'driver' ? colors.text : colors.textMuted} /> },
-            ]}
-          />
-        </View>
+        {!isLogin && (
+          <View style={styles.section}>
+            <Txt variant="label">I am a</Txt>
+            <Segmented
+              value={role}
+              onChange={setRole}
+              options={[
+                { key: 'passenger', label: 'Passenger', icon: <UserIcon size={18} color={role === 'passenger' ? colors.text : colors.textMuted} /> },
+                { key: 'driver', label: 'Driver', icon: <Car size={18} color={role === 'driver' ? colors.text : colors.textMuted} /> },
+              ]}
+            />
+          </View>
+        )}
 
         <View style={styles.section}>
           <Txt variant="label">Phone Number</Txt>
@@ -65,10 +82,14 @@ export default function Login() {
               />
             </View>
           </View>
-          <Txt variant="caption">Standard message and data rates may apply.</Txt>
+          {error ? (
+            <Txt variant="caption" color={colors.error}>{error}</Txt>
+          ) : (
+            <Txt variant="caption">Standard message and data rates may apply.</Txt>
+          )}
         </View>
 
-        <Button label="Continue" icon={<ArrowRight size={20} color={colors.onPrimary} />} onPress={onContinue} disabled={!valid} loading={loading} />
+        <Button label={isLogin ? 'Log in' : 'Continue'} icon={<ArrowRight size={20} color={colors.onPrimary} />} onPress={onContinue} disabled={!valid} loading={loading} />
 
         <View style={styles.dividerRow}>
           <View style={styles.divider} />

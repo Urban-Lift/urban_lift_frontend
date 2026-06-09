@@ -1,12 +1,21 @@
 import { StyleSheet, View, type ColorValue } from 'react-native';
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Car, Home, MessageSquare, User } from 'lucide-react-native';
+import { Car, Gauge, Home, Inbox, MessageSquare, User } from 'lucide-react-native';
+import { useAuthStore } from '@/store/authStore';
 import { colors, fonts, radii } from '@/theme';
 
-/** Passenger bottom navigation — Home · Rides · Messages · Profile. */
+/**
+ * One tab bar, two layouts. Passengers see Home · Rides · Messages · Profile;
+ * drivers see Dashboard · Requests · Messages · Profile. Tabs for the other
+ * role are hidden with `href: null`, and the (app) layout guards direct access.
+ */
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
+  const role = useAuthStore((s) => s.user?.role);
+  const isDriver = role === 'driver';
+  const isPassenger = role === 'passenger';
+
   return (
     <Tabs
       screenOptions={{
@@ -18,14 +27,27 @@ export default function TabsLayout() {
         tabBarItemStyle: { paddingTop: 8 },
       }}
     >
+      {/* Passenger tabs */}
       <Tabs.Screen
         name="home"
-        options={{ title: 'Home', tabBarIcon: (p) => <TabIcon {...p} Icon={Home} /> }}
+        options={{ href: isPassenger ? '/home' : null, title: 'Home', tabBarIcon: (p) => <TabIcon {...p} Icon={Home} /> }}
       />
       <Tabs.Screen
         name="my-rides"
-        options={{ title: 'Rides', tabBarIcon: (p) => <TabIcon {...p} Icon={Car} /> }}
+        options={{ href: isPassenger ? '/my-rides' : null, title: 'Rides', tabBarIcon: (p) => <TabIcon {...p} Icon={Car} /> }}
       />
+
+      {/* Driver tabs */}
+      <Tabs.Screen
+        name="driver-home"
+        options={{ href: isDriver ? '/driver-home' : null, title: 'Dashboard', tabBarIcon: (p) => <TabIcon {...p} Icon={Gauge} /> }}
+      />
+      <Tabs.Screen
+        name="driver-requests"
+        options={{ href: isDriver ? '/driver-requests' : null, title: 'Requests', tabBarIcon: (p) => <TabIcon {...p} Icon={Inbox} /> }}
+      />
+
+      {/* Shared tabs */}
       <Tabs.Screen
         name="messages"
         options={{ title: 'Messages', tabBarIcon: (p) => <TabIcon {...p} Icon={MessageSquare} dot /> }}

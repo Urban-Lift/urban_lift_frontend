@@ -15,6 +15,8 @@ interface SignupDraft {
   phone: string;
   email?: string;
   name?: string;
+  emergencyNumber?: string;
+  photoUri?: string;
 }
 
 interface AuthState {
@@ -25,6 +27,8 @@ interface AuthState {
 
   startSignup: (role: Role, phone: string) => void;
   updateDraft: (patch: Partial<SignupDraft>) => void;
+  /** Store the JWT before the profile exists (during onboarding). */
+  setSessionToken: (token: string) => void;
   login: (user: User, token: string) => void;
   patchUser: (patch: Partial<User>) => void;
   logout: () => void;
@@ -41,6 +45,11 @@ export const useAuthStore = create<AuthState>()(
       startSignup: (role, phone) => set({ draft: { role, phone } }),
       updateDraft: (patch) =>
         set((s) => ({ draft: s.draft ? { ...s.draft, ...patch } : s.draft })),
+
+      setSessionToken: (token) => {
+        setAuthToken(token);
+        set({ token });
+      },
 
       login: (user, token) => {
         setAuthToken(token);

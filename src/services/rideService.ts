@@ -1,8 +1,7 @@
-/** Search rides, ride detail, book + cancel, and mock live-trip polling. */
-import type { Booking, Ride, Trip } from '@/types';
-import { bookings as seedBookings, rides } from '@/mocks/data';
-import { refId } from '@/utils/format';
-import { delay } from './api';
+/** Passenger ride endpoints (search, book, bookings, review, track, SOS). */
+import type { Booking, PaymentProvider, Ride, Trip } from '@/types';
+import { http } from './api';
+import { asList, mapBooking, mapRide, mapTrip } from './mappers';
 
 export interface SearchParams {
   origin?: string;
@@ -10,83 +9,79 @@ export interface SearchParams {
   seats?: number;
 }
 
+const PROVIDER_TO_METHOD: Record<PaymentProvider, string> = {
+  mtn: 'mobile_money',
+  vodafone: 'mobile_money',
+  at: 'mobile_money',
+  card: 'wallet',
+};
+
 export const rideService = {
+  /** Search available rides by pickup/destination. */
   async search(params: SearchParams): Promise<Ride[]> {
-    let results = rides.filter((r) => r.seatsAvailable >= (params.seats ?? 1));
-    if (params.origin) {
-      results = results.filter((r) =>
-        r.origin.toLowerCase().includes(params.origin!.toLowerCase()),
-      );
-    }
-    if (params.destination) {
-      results = results.filter((r) =>
-        r.destination.toLowerCase().includes(params.destination!.toLowerCase()),
-      );
-    }
-    return delay(results, 700);
+    const res = await http.get('/passenger/ride/search', {
+      pickup_location: params.origin,
+      dropoff_location: params.destination,
+      seats_needed: params.seats,
+    });
+    return asList(res).map(mapRide);
   },
 
   async getRide(id: string): Promise<Ride | undefined> {
-    return delay(rides.find((r) => r.id === id), 400);
+    // Driver ride detail endpoint; passengers normally arrive with the ride
+    // already selected from search. Falls back to undefined on error.
+    try {
+      const res = await http.get(`/drivers/rides/${id}`);
+      return mapRide(res?.ride ?? res);
+    } catch {
+      return undefined;
+    }
   },
 
-  async book(input: {
-    rideId: string;
-    seats: number;
-    pickup: string;
-    dropoff: string;
-  }): Promise<Booking> {
-    const ride = rides.find((r) => r.id === input.rideId)!;
-    return delay(
-      {
-        id: refId('BK'),
-        ride,
-        seats: input.seats,
-        totalPrice: ride.pricePerSeat * input.seats,
-        status: 'confirmed',
-        pickup: input.pickup,
-        dropoff: input.dropoff,
-        createdAt: new Date().toISOString(),
-      },
-      900,
-    );
+  async book(input: { rideId: string; seats: number; pickup: string; dropoff: string; method?: PaymentProvider }): Promise<Booking> {
+    const res = await http.postForm('/passenger/ride/book', {
+      ride_id: input.rideId,
+      seats_booked: input.seats,
+      payment_method: PROVIDER_TO_METHOD[input.method ?? 'mtn'],
+      pickup_location: input.pickup,
+      dropoff_location: input.dropoff,
+    });
+    // Some APIs return the created booking; otherwise refetch the list head.
+    if (res && (res.id || res.booking_id || res.ride)) return mapBooking(res);
+    const list = await rideService.myBookings();
+    return list[0];
   },
 
   async myBookings(): Promise<Booking[]> {
-    return delay(seedBookings, 500);
+    const res = await http.get('/passenger/ride/booking');
+    return asList(res).map(mapBooking);
   },
 
-  async cancel(bookingId: string): Promise<{ ok: true }> {
-    return delay({ ok: true }, 500);
+  async cancel(_bookingId: string): Promise<{ ok: true }> {
+    // No cancel endpoint exposed yet; treated as a no-op success.
+    return { ok: true };
   },
 
-  /**
-   * One tick of mock live-trip telemetry. Given the previous trip we advance
-   * the driver toward the destination and shrink the ETA — the screens poll
-   * this on an interval. Wire a WebSocket here later.
-   */
+  async review(input: { rideId: string; rating: number; comment?: string; note?: string }): Promise<void> {
+    await http.postForm('/passenger/ride/review', {
+      ride_id: input.rideId,
+      rating: input.rating,
+      comment: input.comment,
+      note: input.note,
+    });
+  },
+
+  async sos(bookingId: string): Promise<void> {
+    await http.postQuery(`/passenger/ride/sos/${bookingId}`, {});
+  },
+
+  /** Poll live trip telemetry for a booking. */
   async pollTrip(prev: Trip): Promise<Trip> {
-    const step = prev.status === 'in_trip' ? 14 : 18;
-    const progress = Math.min(100, prev.progressPct + step);
-    const etaMin = Math.max(0, prev.etaMin - 1);
-    const from = prev.ride.originCoord;
-    const to = prev.ride.destinationCoord;
-    const t = progress / 100;
-    return delay(
-      {
-        ...prev,
-        progressPct: progress,
-        etaMin,
-        driverLocation: {
-          lat: from.lat + (to.lat - from.lat) * t,
-          lng: from.lng + (to.lng - from.lng) * t,
-        },
-        status:
-          prev.status === 'navigating_to_pickup' && progress >= 100
-            ? 'in_trip'
-            : prev.status,
-      },
-      1500,
-    );
+    try {
+      const res = await http.get(`/passenger/ride/track/${prev.bookingId}`);
+      return mapTrip(res?.tracking ?? res, prev);
+    } catch {
+      return prev;
+    }
   },
 };

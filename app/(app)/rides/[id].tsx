@@ -34,11 +34,14 @@ export default function RideDetails() {
   const selected = useRideStore((s) => s.selectedRide);
   const setLastBooking = useBookingStore((s) => s.setLastBooking);
 
+  const haveSelected = selected?.id === id;
   const { data: ride } = useQuery({
     queryKey: ['ride', id],
     queryFn: () => rideService.getRide(id!),
-    initialData: selected?.id === id ? selected : undefined,
-    enabled: !!id,
+    initialData: haveSelected ? selected : undefined,
+    // Don't refetch if we already have the ride from search — the detail
+    // endpoint is driver-scoped and would otherwise blank the screen.
+    enabled: !!id && !haveSelected,
   });
 
   const [seats, setSeats] = useState(1);

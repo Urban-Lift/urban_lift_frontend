@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Car, Check, Clock, LocateFixed, User as UserIcon, Zap } from 'lucide-react-native';
+import { Car, Clock, LocateFixed, Zap } from 'lucide-react-native';
 import { Avatar, Button, Card, Gradient, MapView, Spinner, Txt } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { useDriverStore } from '@/store/driverStore';
@@ -32,7 +32,7 @@ export default function DriverDashboard() {
               <Txt variant="display" color={colors.white}>{ghs(stats.todayEarnings)}</Txt>
             </View>
             <Pressable style={styles.avatarBtn} onPress={() => router.push('/profile')}>
-              <Avatar name={user?.name ?? 'Driver'} size={44} />
+              <Avatar name={user?.name ?? 'Driver'} uri={user?.avatarUrl} size={44} />
             </Pressable>
           </View>
 
@@ -69,7 +69,7 @@ export default function DriverDashboard() {
 
           <View style={styles.sectionHead}>
             <Txt variant="h3">Incoming Requests</Txt>
-            <Pressable onPress={() => router.push('/driver/passengers')} hitSlop={8}>
+            <Pressable onPress={() => router.push('/driver-requests')} hitSlop={8}>
               <Txt variant="captionStrong" color={colors.forest}>View All</Txt>
             </Pressable>
           </View>

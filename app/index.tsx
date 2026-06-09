@@ -63,7 +63,7 @@ export default function Splash() {
         <Button label="Get Started" icon={<ArrowRight size={20} color={colors.onPrimary} />} onPress={() => router.push('/login')} />
         <View style={styles.loginRow}>
           <Txt variant="caption">Have an account?</Txt>
-          <Pressable onPress={() => router.push('/login')} hitSlop={8}>
+          <Pressable onPress={() => router.push('/login?mode=login')} hitSlop={8}>
             <Txt variant="captionStrong" color={colors.forest}>
               Log in
             </Txt>

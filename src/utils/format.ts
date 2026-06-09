@@ -19,6 +19,14 @@ export function formatPhone(raw: string): string {
   return `+233 ${local.slice(0, 2)} ${local.slice(2, 5)} ${local.slice(5)}`.trim();
 }
 
+/** The API expects LOCAL Ghana format: 0 + the 9-digit subscriber number. */
+export function toLocalPhone(raw: string): string {
+  let digits = raw.replace(/\D/g, '');
+  if (digits.startsWith('233')) digits = digits.slice(3);
+  digits = digits.replace(/^0+/, '');
+  return '0' + digits.slice(0, 9);
+}
+
 /** Friendly departure label: "Today, 14:30", "Tomorrow, 08:00", or date. */
 export function departLabel(iso: string): string {
   const d = new Date(iso);

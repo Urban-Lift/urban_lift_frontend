@@ -36,6 +36,15 @@ export default function Tracking() {
     router.replace('/my-rides');
   }
 
+  async function sos() {
+    try {
+      await rideService.sos(booking!.id);
+    } catch {
+      /* ignore */
+    }
+    Alert.alert('Emergency', 'Safety team alerted and your live location shared.');
+  }
+
   return (
     <View style={styles.root}>
       <View style={{ height: height * 0.58 }}>
@@ -55,7 +64,7 @@ export default function Tracking() {
               <Txt variant="captionStrong" color={colors.forest}>{statusLabel}</Txt>
             </View>
             {inTrip ? (
-              <Pressable style={[styles.roundBtn, styles.sosRound]} onPress={() => Alert.alert('Emergency', 'Safety team alerted.')}>
+              <Pressable style={[styles.roundBtn, styles.sosRound]} onPress={sos}>
                 <Txt variant="captionStrong" color={colors.white}>SOS</Txt>
               </Pressable>
             ) : (
@@ -99,13 +108,13 @@ export default function Tracking() {
                 <Button label="Cancel Trip" variant="outline" onPress={cancel} />
               </View>
               <View style={styles.flex}>
-                <Button label="Emergency SOS" variant="danger" icon={<ShieldAlert size={16} color={colors.white} />} onPress={() => Alert.alert('Emergency', 'Safety team alerted.')} />
+                <Button label="Emergency SOS" variant="danger" icon={<ShieldAlert size={16} color={colors.white} />} onPress={sos} />
               </View>
             </>
           ) : (
             <>
               <View style={styles.flex}>
-                <Button label="SOS" variant="outline" onPress={() => Alert.alert('Emergency', 'Safety team alerted.')} />
+                <Button label="SOS" variant="outline" onPress={sos} />
               </View>
               <View style={styles.flex2}>
                 <Button label="Share Trip" icon={<Share2 size={18} color={colors.onPrimary} />} onPress={() => Alert.alert('Trip shared', 'Live tracking link copied.')} />

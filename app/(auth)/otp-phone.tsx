@@ -5,10 +5,15 @@ import { CheckCircle2, Clock, Lock } from 'lucide-react-native';
 import { Button, Header, OTPInput, Screen, Txt } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
+import { apiError } from '@/services/api';
+import { mapProfile } from '@/services/mappers';
+import { homeRouteFor } from '@/utils/routes';
 import { colors, radii, spacing } from '@/theme';
 
 export default function OtpPhone() {
   const draft = useAuthStore((s) => s.draft);
+  const setSessionToken = useAuthStore((s) => s.setSessionToken);
+  const login = useAuthStore((s) => s.login);
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
@@ -23,10 +28,40 @@ export default function OtpPhone() {
   async function verify() {
     setLoading(true);
     setError(undefined);
-    const { verified } = await authService.verifyPhoneOtp(draft?.phone ?? '', code);
-    setLoading(false);
-    if (verified) router.push('/otp-email');
-    else setError('That code is not valid. Enter the 6 digits we sent you.');
+    const phone = draft?.phone ?? '';
+    try {
+      const token = await authService.verifyPhoneOtp(phone, code);
+      setSessionToken(token);
+      const role = authService.roleFromToken(token) ?? draft?.role ?? 'passenger';
+
+      // Already onboarded? Go straight home. Otherwise finish profile setup.
+      const profile = await authService.getProfile();
+      if (profile) {
+        const user = mapProfile(profile, role, phone);
+        login(user, token);
+        router.replace(homeRouteFor(user.role));
+      } else if (role === 'admin') {
+        login({ id: phone, role: 'admin', name: 'Admin', phone, rating: 5 }, token);
+        router.replace('/admin');
+      } else {
+        // Profile setup must precede email verification (backend looks the user
+        // up by email, which is only set during profile create).
+        router.replace(role === 'driver' ? '/setup-driver' : '/setup-passenger');
+      }
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function resend() {
+    setSeconds(45);
+    try {
+      await authService.resendPhoneOtp(draft?.phone ?? '');
+    } catch {
+      /* ignore */
+    }
   }
 
   return (
@@ -72,7 +107,7 @@ export default function OtpPhone() {
                 </Txt>
               </Txt>
             ) : (
-              <Pressable onPress={() => setSeconds(45)} hitSlop={8}>
+              <Pressable onPress={resend} hitSlop={8}>
                 <Txt variant="captionStrong" color={colors.forest}>Resend code</Txt>
               </Pressable>
             )}

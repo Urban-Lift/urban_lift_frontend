@@ -20,7 +20,7 @@ export default function NavigateToPickup() {
     return (
       <SafeAreaView style={styles.empty}>
         <Txt variant="muted" center>No active pickup.</Txt>
-        <Button label="Back to dashboard" onPress={() => router.replace('/driver/dashboard')} />
+        <Button label="Back to dashboard" onPress={() => router.replace('/driver-home')} />
       </SafeAreaView>
     );
   }
@@ -28,7 +28,7 @@ export default function NavigateToPickup() {
   function cancel() {
     Alert.alert('Cancel pickup?', 'The passenger will be notified.', [
       { text: 'Keep', style: 'cancel' },
-      { text: 'Cancel', style: 'destructive', onPress: () => { reset(); router.replace('/driver/dashboard'); } },
+      { text: 'Cancel', style: 'destructive', onPress: () => { reset(); router.replace('/driver-home'); } },
     ]);
   }
 
@@ -38,7 +38,7 @@ export default function NavigateToPickup() {
         <MapView progress={progress} height={height * 0.55} />
         <SafeAreaView style={styles.overlay} pointerEvents="box-none">
           <View style={styles.topRow}>
-            <Pressable style={styles.roundBtn} onPress={() => router.replace('/driver/dashboard')}><ChevronLeft size={22} color={colors.text} /></Pressable>
+            <Pressable style={styles.roundBtn} onPress={() => router.replace('/driver-home')}><ChevronLeft size={22} color={colors.text} /></Pressable>
             <View style={styles.statusPill}>
               <Navigation size={14} color={colors.forest} />
               <Txt variant="captionStrong" color={colors.forest}>Navigating to Pickup</Txt>

@@ -44,12 +44,14 @@ export function Button({
     <ActivityIndicator color={v.fg} />
   ) : (
     <View style={styles.row}>
-      <Text style={[styles.label, { color: v.fg, fontSize: s.fs }]}>{label}</Text>
+      <Text numberOfLines={1} style={[styles.label, { color: v.fg, fontSize: s.fs }]}>
+        {label}
+      </Text>
       {icon}
     </View>
   );
 
-  const padding = { paddingVertical: s.py, paddingHorizontal: spacing.xl };
+  const padding = { paddingVertical: s.py, paddingHorizontal: spacing.lg };
 
   return (
     <AnimatedPressable
@@ -100,7 +102,7 @@ const styles = StyleSheet.create({
   base: { borderRadius: radii.md },
   fullWidth: { alignSelf: 'stretch' },
   fill: { alignItems: 'center', justifyContent: 'center', borderRadius: radii.md },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  label: { fontFamily: fonts.bold },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  label: { fontFamily: fonts.bold, textAlign: 'center', flexShrink: 1 },
   disabled: { opacity: 0.45 },
 });

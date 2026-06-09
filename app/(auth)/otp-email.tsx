@@ -5,31 +5,46 @@ import { Lightbulb, Mail } from 'lucide-react-native';
 import { Button, Header, Input, OTPInput, Screen, Txt } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
+import { apiError } from '@/services/api';
 import { colors, radii, spacing } from '@/theme';
 
 export default function OtpEmail() {
   const draft = useAuthStore((s) => s.draft);
   const updateDraft = useAuthStore((s) => s.updateDraft);
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(draft?.email ?? '');
   const [sent, setSent] = useState(false);
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string>();
 
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const next = draft?.role === 'driver' ? '/setup-driver' : '/setup-passenger';
 
   async function sendCode() {
     setLoading(true);
+    setError(undefined);
     updateDraft({ email });
-    await authService.requestOtp(email);
-    setLoading(false);
-    setSent(true);
+    try {
+      await authService.requestEmailOtp(email);
+      setSent(true);
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function verify() {
     setLoading(true);
-    const { verified } = await authService.verifyEmailOtp(email, code);
-    setLoading(false);
-    if (verified) router.push(draft?.role === 'driver' ? '/setup-driver' : '/setup-passenger');
+    setError(undefined);
+    try {
+      await authService.verifyEmailOtp(email, code);
+      router.push(next);
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -58,6 +73,7 @@ export default function OtpEmail() {
           <View style={styles.badgeDot} />
         </View>
         <Txt variant="h1" center>Verify Your Email</Txt>
+        {error ? <Txt variant="caption" center color={colors.error}>{error}</Txt> : null}
 
         {sent ? (
           <>

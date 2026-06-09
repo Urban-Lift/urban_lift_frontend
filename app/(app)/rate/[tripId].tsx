@@ -5,7 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { BadgeCheck, Car } from 'lucide-react-native';
 import { Avatar, Badge, Button, Header, Input, Screen, StarRating, Txt } from '@/components';
 import { rideService } from '@/services/rideService';
-import { profileService } from '@/services/profileService';
 import { colors, radii, spacing } from '@/theme';
 
 const TAGS = ['Safe driver', 'Clean car', 'Friendly', 'On time', 'Great music'];
@@ -28,7 +27,16 @@ export default function RateTrip() {
 
   async function submit() {
     setSaving(true);
-    await profileService.submitReview({ tripId: tripId!, rating, tags, note });
+    try {
+      await rideService.review({
+        rideId: booking?.ride.id ?? tripId!,
+        rating,
+        comment: tags.join(', '),
+        note,
+      });
+    } catch {
+      /* surface-free: still leave the screen */
+    }
     setSaving(false);
     router.replace('/my-rides');
   }

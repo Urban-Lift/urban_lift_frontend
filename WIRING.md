@@ -19,15 +19,15 @@ Screen component (app/…)            ← what the user sees (a route file)
    ↓ calls
 Zustand store  and/or  React Query  ← state: client state vs. server state
    ↓ which calls
-Service (src/services/…)            ← the "API". Today returns mock data.
+Service (src/services/…)            ← talks to the live UrbanLift API.
    ↓ reads
 Mock fixtures (src/mocks/data.ts)   ← seed data (Accra locations, drivers…)
 ```
 
-Everything is **mock-first**: there is no backend yet. Services return fake
-data after a small delay so loading spinners and error states are real. When a
-real backend exists you change **only the services** — screens never touch the
-network directly.
+The app talks to a **real backend** for auth, rides and bookings (see §6).
+A few features the API doesn't cover yet (wallet, community, driver stats, saved
+routes, notifications) still use local fixtures, flagged in `src/config.ts`.
+Screens never touch the network directly — only services do.
 
 ---
 
@@ -174,21 +174,41 @@ The stores:
 
 ---
 
-## 6. The services layer (the fake backend)
+## 6. The services layer (now a REAL backend)
 
-`src/services/` is the **only** place that "talks to the network". Each service
-returns the exact shapes defined in `src/types/`, so screens don't care whether
-data is real or mocked.
+`src/services/` is the **only** place that talks to the network. Each service
+returns the exact shapes in `src/types/`, so screens don't care where data comes
+from.
 
-- `api.ts` — the shared axios instance, an auth-token interceptor, the
-  `USE_MOCK_API` flag, and a `delay()` helper that simulates latency.
-- `authService` · `rideService` · `driverService` · `walletService` ·
-  `profileService` · `communityService` — one per domain. Today they read from
-  `src/mocks/data.ts` and resolve through `delay()`.
+The app talks to the live **UrbanLift API** (`https://urban-lift-api.onrender.com`,
+set in `src/config.ts`). Key things `api.ts` hides from the rest of the app:
 
-**Going live later** = set `USE_MOCK_API = false`, point `API_BASE_URL` at your
-server, and replace the mock bodies with real `api.get/post(...)` calls. No
-screen changes.
+- **Form-encoded bodies** — most POST/PATCH endpoints are
+  `application/x-www-form-urlencoded`, *not* JSON. `http.postForm()` handles this.
+- **Multipart uploads** — profile photo and driver documents go through
+  `http.postMultipart()` with `filePart(uri)`.
+- **Bearer auth** — the JWT from `/users/verify/otp` is stored in `authStore`
+  and injected by an axios interceptor.
+- **Local phone format** — `toLocalPhone()` converts to `0XXXXXXXXX` (what the
+  API expects).
+- **`apiError()`** — turns FastAPI `detail` errors into readable messages.
+
+Because the API's response schemas aren't in its OpenAPI spec, raw responses are
+normalised in **one place** — `src/services/mappers.ts` (`mapRide`, `mapBooking`,
+`mapTrip`). They read several likely field names and fall back to defaults; if a
+real response uses different keys, fix it there and every screen benefits.
+
+**Live endpoints used:** auth (signup → phone OTP → email OTP → profile create),
+passenger ride search/book/bookings/review/track/SOS, driver registration,
+and the public `geocode` / `reverse_geocode` / `ride/distance` helpers.
+
+**Still mock (no endpoint on the API yet)** — flagged in `src/config.ts` under
+`MOCK`: **wallet**, **community/chat**, **driver earnings & incoming requests**,
+**saved routes**, **notification settings**. These keep using `src/mocks/data.ts`
+so those screens still work; swap them to real calls when endpoints exist.
+
+> **Auth is real SMS OTP now** — "any 6 digits" no longer works. You verify with
+> a real Ghana phone number; the API texts the code.
 
 ---
 
@@ -270,8 +290,9 @@ npm run typecheck      # tsc --noEmit (no errors = good)
 ```
 
 Install **Expo Go** on your phone, run `npm start`, scan the QR code, and the
-app loads live with hot reload. For web it opens in the browser. Any 6-digit
-code works at the OTP screens; the data is all mock.
+app loads live with hot reload. For web it opens in the browser. Sign-in uses a
+**real SMS OTP** to a Ghana number (local format, e.g. `0241234567`); rides and
+bookings come from the live API.
 
 ---
 
@@ -279,7 +300,9 @@ code works at the OTP screens; the data is all mock.
 
 | Want to… | Touch only… |
 |----------|-------------|
-| Connect a real backend | `src/services/*` (+ flip `USE_MOCK_API`) |
+| Point at a different backend | `src/config.ts` (`API_BASE_URL`) |
+| Fix a wrong API field mapping | `src/services/mappers.ts` |
+| Turn a mock feature real once its endpoint ships | flip its flag in `src/config.ts` `MOCK` + implement in its service |
 | Add a screen | a new file in `app/…` |
 | Change brand look | `src/theme/index.ts` |
 | Tune the map (upgrade to react-native-maps, add a tile key, etc.) | `src/components/map/*` |
