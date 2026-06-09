@@ -1,4 +1,7 @@
 export { Button } from './Button';
+export { Gradient } from './Gradient';
+export { Segmented } from './Segmented';
+export { Stepper } from './Stepper';
 export { Input } from './Input';
 export { Card } from './Card';
 export { Badge, StatusBadge } from './Badge';

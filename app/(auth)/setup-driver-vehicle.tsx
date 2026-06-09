@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
+import { ArrowRight } from 'lucide-react-native';
 import { Button, Header, Input, Screen, Txt } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
-import { spacing } from '@/theme';
+import { colors, spacing } from '@/theme';
 
 /** Driver setup — step 2 of 2: vehicle details. Creates the account. */
 export default function SetupDriverVehicle() {
@@ -33,8 +34,8 @@ export default function SetupDriverVehicle() {
   }
 
   return (
-    <Screen scroll footer={<Button label="Finish & go online" onPress={finish} disabled={!valid} loading={loading} />}>
-      <Header title="Driver setup" subtitle="Step 2 of 2 · Vehicle" />
+    <Screen scroll footer={<Button label="Create Account" icon={<ArrowRight size={20} color={colors.onPrimary} />} onPress={finish} disabled={!valid} loading={loading} />}>
+      <Header title="Vehicle Details" subtitle="Step 2 of 2" />
       <View style={styles.body}>
         <Txt variant="muted">Passengers see this so they can spot your car.</Txt>
         <View style={styles.row}>

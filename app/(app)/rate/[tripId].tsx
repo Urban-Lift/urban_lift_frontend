@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
-import { Button, Card, Input, Screen, StarRating, Txt } from '@/components';
+import { useQuery } from '@tanstack/react-query';
+import { BadgeCheck, Car } from 'lucide-react-native';
+import { Avatar, Badge, Button, Header, Input, Screen, StarRating, Txt } from '@/components';
+import { rideService } from '@/services/rideService';
 import { profileService } from '@/services/profileService';
 import { colors, radii, spacing } from '@/theme';
 
-const TAGS = ['Friendly', 'Safe driving', 'On time', 'Clean car', 'Great music', 'Good conversation'];
+const TAGS = ['Safe driver', 'Clean car', 'Friendly', 'On time', 'Great music'];
+const LABELS = ['', 'Poor', 'Fair', 'Okay', 'Good', 'Excellent'];
 
 export default function RateTrip() {
   const { tripId } = useLocalSearchParams<{ tripId: string }>();
-  const [rating, setRating] = useState(5);
-  const [tags, setTags] = useState<string[]>([]);
+  const { data: bookings } = useQuery({ queryKey: ['bookings'], queryFn: rideService.myBookings });
+  const booking = bookings?.find((b) => b.id === tripId);
+  const driver = booking?.ride.driver;
+
+  const [rating, setRating] = useState(4);
+  const [tags, setTags] = useState<string[]>(['Clean car']);
   const [note, setNote] = useState('');
   const [saving, setSaving] = useState(false);
 
@@ -30,64 +38,68 @@ export default function RateTrip() {
       scroll
       footer={
         <View style={styles.actions}>
-          <Button label="Submit review" onPress={submit} loading={saving} />
+          <Button label="Submit Review" onPress={submit} loading={saving} />
           <Button label="Skip" variant="ghost" onPress={() => router.replace('/my-rides')} />
         </View>
       }
     >
-      <View style={styles.hero}>
-        <Txt variant="h2" center>
-          How was your ride?
-        </Txt>
-        <Txt variant="muted" center>
-          Your feedback keeps the community safe and friendly.
-        </Txt>
+      <Header title="Rate Your Trip" />
+
+      <View style={styles.driver}>
+        <View style={styles.avatarWrap}>
+          <Avatar name={driver?.name ?? 'Driver'} uri={driver?.avatarUrl} size={88} />
+          <View style={styles.verified}>
+            <BadgeCheck size={18} color={colors.white} fill={colors.primary} />
+          </View>
+        </View>
+        <Txt variant="h2">{driver?.name?.split(' ')[0] ?? 'Driver'}</Txt>
+        {driver ? (
+          <View style={styles.vehicle}>
+            <Car size={14} color={colors.textMuted} />
+            <Txt variant="caption">{driver.vehicle.make} {driver.vehicle.model} · {driver.vehicle.plate}</Txt>
+          </View>
+        ) : null}
+        {booking ? <Badge label={`${booking.pickup} to ${booking.dropoff}`} tone="success" /> : null}
+      </View>
+
+      <View style={styles.rateBlock}>
+        <Txt variant="h3" center>How was your ride?</Txt>
         <View style={styles.stars}>
           <StarRating rating={rating} onChange={setRating} size={40} />
         </View>
+        <Txt variant="captionStrong" center color={colors.textMuted}>{LABELS[rating]}</Txt>
       </View>
 
-      <Card>
-        <Txt variant="h3">What went well?</Txt>
+      <View style={styles.tagsBlock}>
+        <Txt variant="label">What went well?</Txt>
         <View style={styles.tags}>
           {TAGS.map((tag) => {
             const active = tags.includes(tag);
             return (
               <Pressable key={tag} onPress={() => toggle(tag)} style={[styles.tag, active && styles.tagActive]}>
-                <Txt variant="caption" color={active ? colors.primaryDark : colors.textMuted}>
-                  {tag}
-                </Txt>
+                <Txt variant="captionStrong" color={active ? colors.forest : colors.textMuted}>{tag}</Txt>
               </Pressable>
             );
           })}
         </View>
-      </Card>
+      </View>
 
-      <Input
-        label="Add a note (optional)"
-        placeholder="Share more about your experience…"
-        value={note}
-        onChangeText={setNote}
-        multiline
-        numberOfLines={4}
-        style={styles.note}
-      />
+      <Input label="Add a note (optional)" placeholder="Tell us more about your trip…" value={note} onChangeText={setNote} multiline numberOfLines={4} style={styles.note} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  hero: { alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.lg },
-  stars: { marginTop: spacing.sm },
-  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.md },
-  tag: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radii.full,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
+  driver: { alignItems: 'center', gap: spacing.xs, marginTop: spacing.sm },
+  avatarWrap: { marginBottom: spacing.xs },
+  verified: { position: 'absolute', right: -2, bottom: -2, backgroundColor: colors.primary, borderRadius: radii.full, padding: 2, borderWidth: 2, borderColor: colors.background },
+  vehicle: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  rateBlock: { alignItems: 'center', gap: spacing.sm, marginTop: spacing.xl },
+  stars: { marginVertical: spacing.xs },
+  tagsBlock: { gap: spacing.sm, marginTop: spacing.xl },
+  tags: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  tag: { paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderRadius: radii.full, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface },
   tagActive: { borderColor: colors.primary, backgroundColor: colors.lightGreen },
   note: { minHeight: 96, textAlignVertical: 'top' },
-  actions: { gap: spacing.sm },
+  actions: { gap: spacing.xs },
 });

@@ -1,15 +1,17 @@
 import { StyleSheet, Text, View } from 'react-native';
-import { colors, fontSize, fontWeight, radii, spacing } from '@/theme';
+import { colors, fonts, fontSize, radii, spacing } from '@/theme';
 import type { BookingStatus } from '@/types';
 
-type Tone = 'success' | 'warning' | 'error' | 'neutral' | 'info';
+type Tone = 'success' | 'warning' | 'error' | 'neutral' | 'info' | 'purple' | 'solid';
 
 const toneColors: Record<Tone, { bg: string; fg: string }> = {
-  success: { bg: colors.lightGreen, fg: colors.primaryDark },
-  warning: { bg: colors.warningLight, fg: colors.warning },
-  error: { bg: colors.errorLight, fg: colors.error },
-  neutral: { bg: colors.borderLight, fg: colors.textMuted },
-  info: { bg: '#DBEAFE', fg: '#2563EB' },
+  success: { bg: colors.lightGreen, fg: colors.forest },
+  warning: { bg: colors.warningLight, fg: '#B45309' },
+  error: { bg: colors.errorLight, fg: '#B42318' },
+  neutral: { bg: colors.surfaceAlt, fg: colors.textMuted },
+  info: { bg: colors.infoLight, fg: '#1D4ED8' },
+  purple: { bg: colors.purpleLight, fg: colors.purple },
+  solid: { bg: colors.lightGreen, fg: colors.forest },
 };
 
 const statusToTone: Record<BookingStatus, Tone> = {
@@ -19,10 +21,11 @@ const statusToTone: Record<BookingStatus, Tone> = {
   completed: 'neutral',
 };
 
-export function Badge({ label, tone = 'neutral' }: { label: string; tone?: Tone }) {
+export function Badge({ label, tone = 'neutral', icon }: { label: string; tone?: Tone; icon?: React.ReactNode }) {
   const c = toneColors[tone];
   return (
     <View style={[styles.badge, { backgroundColor: c.bg }]}>
+      {icon}
       <Text style={[styles.text, { color: c.fg }]}>{label}</Text>
     </View>
   );
@@ -34,10 +37,13 @@ export function StatusBadge({ status }: { status: BookingStatus }) {
 
 const styles = StyleSheet.create({
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     alignSelf: 'flex-start',
-    paddingHorizontal: spacing.sm + 2,
-    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 5,
     borderRadius: radii.full,
   },
-  text: { fontSize: fontSize.xs, fontWeight: fontWeight.semibold },
+  text: { fontFamily: fonts.semibold, fontSize: fontSize.xs },
 });

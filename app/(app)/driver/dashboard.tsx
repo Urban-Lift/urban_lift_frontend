@@ -1,149 +1,176 @@
-import { Pressable, StyleSheet, Switch, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { Bell, TrendingUp, User as UserIcon, Wallet as WalletIcon } from 'lucide-react-native';
-import { Avatar, Button, Card, RouteLine, Screen, Spinner, Txt } from '@/components';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Car, Check, Clock, LocateFixed, User as UserIcon, Zap } from 'lucide-react-native';
+import { Avatar, Button, Card, Gradient, MapView, Spinner, Txt } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { useDriverStore } from '@/store/driverStore';
 import { driverService } from '@/services/driverService';
 import { ghs } from '@/utils/format';
-import { colors, radii, spacing } from '@/theme';
+import { colors, radii, shadow, spacing } from '@/theme';
 
 export default function DriverDashboard() {
+  const insets = useSafeAreaInsets();
   const user = useAuthStore((s) => s.user);
   const online = useDriverStore((s) => s.online);
   const setOnline = useDriverStore((s) => s.setOnline);
 
   const { data: stats } = useQuery({ queryKey: ['driver-stats'], queryFn: driverService.getStats });
-  const { data: requests } = useQuery({
-    queryKey: ['incoming'],
-    queryFn: driverService.incomingRequests,
-    enabled: online,
-  });
+  const { data: requests } = useQuery({ queryKey: ['incoming'], queryFn: driverService.incomingRequests });
 
   if (!stats) return <Spinner />;
-  const topRequest = requests?.[0];
+  const req = requests?.[0];
 
   return (
-    <Screen scroll padded={false}>
-      <View style={styles.header}>
-        <View style={styles.greet}>
-          <Avatar name={user?.name ?? 'Driver'} size={44} />
-          <View>
-            <Txt variant="caption">Welcome back</Txt>
-            <Txt variant="h3">{user?.name?.split(' ')[0] ?? 'Driver'}</Txt>
-          </View>
-        </View>
-        <View style={styles.headerActions}>
-          <Pressable onPress={() => router.push('/wallet')} hitSlop={8}>
-            <WalletIcon size={22} color={colors.text} />
-          </Pressable>
-          <Pressable onPress={() => router.push('/profile')} hitSlop={8}>
-            <UserIcon size={22} color={colors.text} />
-          </Pressable>
-        </View>
-      </View>
-
-      <View style={styles.body}>
-        <Card style={online ? styles.onlineCard : undefined}>
-          <View style={styles.onlineRow}>
+    <View style={styles.root}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
+        <Gradient name="hero" style={[styles.header, { paddingTop: insets.top + spacing.md }]}>
+          <View style={styles.headerTop}>
             <View>
-              <Txt variant="bodyStrong" color={online ? colors.primaryDark : colors.text}>
-                {online ? "You're online" : "You're offline"}
-              </Txt>
-              <Txt variant="caption">{online ? 'Receiving ride requests' : 'Go online to start earning'}</Txt>
+              <Txt variant="caption" color={colors.lightGreen}>Total Earnings Today</Txt>
+              <Txt variant="display" color={colors.white}>{ghs(stats.todayEarnings)}</Txt>
+            </View>
+            <Pressable style={styles.avatarBtn} onPress={() => router.push('/profile')}>
+              <Avatar name={user?.name ?? 'Driver'} size={44} />
+            </Pressable>
+          </View>
+
+          <View style={styles.onlineCard}>
+            <View style={[styles.zap, { backgroundColor: online ? colors.gold : 'rgba(255,255,255,0.2)' }]}>
+              <Zap size={18} color={online ? colors.onPrimary : colors.white} fill={online ? colors.onPrimary : 'transparent'} />
+            </View>
+            <View style={styles.flex}>
+              <Txt variant="bodyStrong" color={colors.white}>{online ? "You're Online" : "You're Offline"}</Txt>
+              <Txt variant="caption" color={colors.lightGreen}>{online ? 'Finding rides nearby…' : 'Go online to start earning'}</Txt>
             </View>
             <Switch
               value={online}
-              onValueChange={async (v) => {
-                setOnline(v);
-                await driverService.setOnline(v);
+              onValueChange={async (val) => {
+                setOnline(val);
+                await driverService.setOnline(val);
               }}
-              trackColor={{ true: colors.primary, false: colors.border }}
+              trackColor={{ true: colors.info, false: 'rgba(255,255,255,0.25)' }}
               thumbColor={colors.white}
             />
           </View>
-        </Card>
+        </Gradient>
 
-        <Card>
-          <View style={styles.earningsHeader}>
-            <Txt variant="caption">Today's earnings</Txt>
-            <View style={styles.trend}>
-              <TrendingUp size={14} color={colors.primary} />
-              <Txt variant="caption" color={colors.primary}>
-                +12%
-              </Txt>
+        <View style={styles.body}>
+          <View style={styles.mapWrap}>
+            <MapView height={150} />
+            <View style={styles.mapBadge}>
+              <Txt variant="captionStrong">Accra, Cantonments</Txt>
             </View>
+            <Pressable style={styles.locate}>
+              <LocateFixed size={18} color={colors.forest} />
+            </Pressable>
           </View>
-          <Txt variant="h1" color={colors.primary}>
-            {ghs(stats.todayEarnings)}
-          </Txt>
-          <View style={styles.statsRow}>
-            <Stat label="Trips" value={String(stats.todayTrips)} />
-            <Stat label="Hours" value={`${stats.todayHours}h`} />
-            <Stat label="Acceptance" value={`${stats.acceptanceRate}%`} />
-          </View>
-        </Card>
 
-        {online && topRequest ? (
-          <Card style={styles.requestCard}>
-            <View style={styles.requestHeader}>
-              <Bell size={18} color={colors.warning} />
-              <Txt variant="bodyStrong">New ride request</Txt>
-            </View>
-            <View style={styles.requester}>
-              <Avatar name={topRequest.passengerName} size={36} />
-              <View style={styles.flex}>
-                <Txt variant="bodyStrong">{topRequest.passengerName}</Txt>
-                <Txt variant="caption">{topRequest.distanceKm} km away · earns {ghs(topRequest.estEarnings)}</Txt>
+          <View style={styles.sectionHead}>
+            <Txt variant="h3">Incoming Requests</Txt>
+            <Pressable onPress={() => router.push('/driver/passengers')} hitSlop={8}>
+              <Txt variant="captionStrong" color={colors.forest}>View All</Txt>
+            </Pressable>
+          </View>
+
+          {online && req ? (
+            <Card style={styles.reqCard}>
+              <View style={styles.reqHead}>
+                <View style={styles.reqWho}>
+                  <Avatar name={req.passengerName} size={40} />
+                  <View>
+                    <Txt variant="bodyStrong">{req.passengerName}</Txt>
+                    <Txt variant="caption">⭐ {req.passengerRating} (120 rides)</Txt>
+                  </View>
+                </View>
+                <View style={styles.reqEarn}>
+                  <Txt variant="h3" color={colors.forest}>{ghs(req.estEarnings)}</Txt>
+                  <Txt variant="caption">Est. payout</Txt>
+                </View>
               </View>
-            </View>
-            <RouteLine origin={topRequest.pickup} destination={topRequest.dropoff} />
-            <View style={styles.requestActions}>
-              <Button label="View all requests" onPress={() => router.push('/driver/passengers')} />
-            </View>
-          </Card>
-        ) : online ? (
-          <Card>
-            <Txt variant="muted" center>
-              Looking for ride requests near you…
-            </Txt>
-          </Card>
-        ) : null}
-      </View>
-    </Screen>
-  );
-}
 
-function Stat({ label, value }: { label: string; value: string }) {
-  return (
-    <View style={styles.stat}>
-      <Txt variant="bodyStrong">{value}</Txt>
-      <Txt variant="caption">{label}</Txt>
+              <View style={styles.reqRoute}>
+                <View style={styles.reqPoint}>
+                  <View style={styles.ring} />
+                  <View style={styles.flex}>
+                    <Txt variant="caption">Pickup</Txt>
+                    <Txt variant="bodyStrong">{req.pickup}</Txt>
+                    <Txt variant="caption">{req.distanceKm} km away (5 mins)</Txt>
+                  </View>
+                </View>
+                <View style={styles.reqLine} />
+                <View style={styles.reqPoint}>
+                  <View style={styles.pin} />
+                  <View style={styles.flex}>
+                    <Txt variant="caption">Dropoff</Txt>
+                    <Txt variant="bodyStrong">{req.dropoff}</Txt>
+                  </View>
+                </View>
+              </View>
+
+              <View style={styles.reqActions}>
+                <View style={styles.flex}>
+                  <Button label="Decline" variant="outline" onPress={() => driverService.respond(req.id, false)} />
+                </View>
+                <View style={styles.flex}>
+                  <Button label="Accept Ride" onPress={() => { useDriverStore.getState().acceptRequest(req); router.push(`/driver/navigate/${req.id}`); }} />
+                </View>
+              </View>
+            </Card>
+          ) : (
+            <Card>
+              <Txt variant="muted" center>{online ? 'Looking for ride requests near you…' : 'Go online to receive requests.'}</Txt>
+            </Card>
+          )}
+
+          <Txt variant="h3" style={styles.statsTitle}>Today's Stats</Txt>
+          <View style={styles.statsRow}>
+            <StatCard icon={<Car size={20} color={colors.info} />} bg={colors.infoLight} value={String(stats.todayTrips)} label="Total Trips" />
+            <StatCard icon={<Clock size={20} color={colors.gold} />} bg={colors.warningLight} value={`${stats.todayHours}h`} label="Hours Worked" />
+          </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
 
+function StatCard({ icon, bg, value, label }: { icon: React.ReactNode; bg: string; value: string; label: string }) {
+  return (
+    <Card style={styles.statCard}>
+      <View style={[styles.statIcon, { backgroundColor: bg }]}>{icon}</View>
+      <Txt variant="h1">{value}</Txt>
+      <Txt variant="caption">{label}</Txt>
+    </Card>
+  );
+}
+
 const styles = StyleSheet.create({
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.sm,
-  },
-  greet: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  headerActions: { flexDirection: 'row', gap: spacing.lg },
-  body: { padding: spacing.xl, gap: spacing.md },
-  onlineCard: { borderColor: colors.primary, backgroundColor: colors.lightGreen },
-  onlineRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  earningsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  trend: { flexDirection: 'row', alignItems: 'center', gap: 2 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.lg },
-  stat: { alignItems: 'center', flex: 1 },
-  requestCard: { borderColor: colors.warning },
-  requestHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  requester: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md },
+  root: { flex: 1, backgroundColor: colors.background },
+  scroll: { paddingBottom: spacing['3xl'] },
+  header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xl, borderBottomLeftRadius: radii['2xl'], borderBottomRightRadius: radii['2xl'], gap: spacing.lg },
+  headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  avatarBtn: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)', borderRadius: radii.full },
+  onlineCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: radii.md, padding: spacing.md },
+  zap: { width: 36, height: 36, borderRadius: radii.sm, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },
-  requestActions: { marginTop: spacing.md },
+  body: { padding: spacing.xl, gap: spacing.lg },
+  mapWrap: { position: 'relative' },
+  mapBadge: { position: 'absolute', top: spacing.md, left: spacing.md, backgroundColor: colors.surface, paddingHorizontal: spacing.md, paddingVertical: 6, borderRadius: radii.full, ...shadow.card },
+  locate: { position: 'absolute', bottom: spacing.md, right: spacing.md, width: 40, height: 40, borderRadius: radii.full, backgroundColor: colors.surface, alignItems: 'center', justifyContent: 'center', ...shadow.card },
+  sectionHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  reqCard: { borderLeftWidth: 4, borderLeftColor: colors.gold, gap: spacing.md },
+  reqHead: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  reqWho: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  reqEarn: { alignItems: 'flex-end' },
+  reqRoute: { gap: 2 },
+  reqPoint: { flexDirection: 'row', gap: spacing.md, alignItems: 'flex-start' },
+  ring: { width: 14, height: 14, borderRadius: 7, borderWidth: 3, borderColor: colors.textMuted, marginTop: 2 },
+  pin: { width: 14, height: 14, borderRadius: 7, backgroundColor: colors.forest, marginTop: 2 },
+  reqLine: { width: 2, height: 16, backgroundColor: colors.border, marginLeft: 6 },
+  reqActions: { flexDirection: 'row', gap: spacing.sm },
+  statsTitle: { marginTop: spacing.xs },
+  statsRow: { flexDirection: 'row', gap: spacing.md },
+  statCard: { flex: 1, gap: spacing.xs },
+  statIcon: { width: 40, height: 40, borderRadius: radii.sm, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.xs },
 });

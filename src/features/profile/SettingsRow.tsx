@@ -7,21 +7,23 @@ import { Txt } from '@/components';
 interface Props {
   icon: ReactNode;
   label: string;
+  subtitle?: string;
   value?: string;
   onPress?: () => void;
   danger?: boolean;
   last?: boolean;
 }
 
-export function SettingsRow({ icon, label, value, onPress, danger, last }: Props) {
+export function SettingsRow({ icon, label, subtitle, value, onPress, danger, last }: Props) {
   return (
     <Pressable onPress={onPress} style={[styles.row, !last && styles.divider]}>
       <View style={[styles.iconWrap, danger && styles.iconDanger]}>{icon}</View>
-      <Txt variant="body" color={danger ? colors.error : colors.text} style={styles.label}>
-        {label}
-      </Txt>
+      <View style={styles.flex}>
+        <Txt variant="bodyStrong" color={danger ? colors.error : colors.text}>{label}</Txt>
+        {subtitle ? <Txt variant="caption">{subtitle}</Txt> : null}
+      </View>
       {value ? <Txt variant="caption">{value}</Txt> : null}
-      {onPress && !danger ? <ChevronRight size={18} color={colors.textMuted} /> : null}
+      {onPress && !danger ? <ChevronRight size={18} color={colors.textLight} /> : null}
     </Pressable>
   );
 }
@@ -29,14 +31,7 @@ export function SettingsRow({ icon, label, value, onPress, danger, last }: Props
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg },
   divider: { borderBottomWidth: 1, borderBottomColor: colors.borderLight },
-  iconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: radii.sm,
-    backgroundColor: colors.lightGreen,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  iconWrap: { width: 40, height: 40, borderRadius: radii.sm, backgroundColor: colors.lightGreen, alignItems: 'center', justifyContent: 'center' },
   iconDanger: { backgroundColor: colors.errorLight },
-  label: { flex: 1 },
+  flex: { flex: 1 },
 });

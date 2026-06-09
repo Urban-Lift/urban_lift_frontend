@@ -201,13 +201,31 @@ Change a token once and it updates everywhere.
 
 UI primitives in `src/components/ui/` are built on those tokens:
 `Button, Input, Card, Badge, Avatar, StarRating, OTPInput, Screen, Header,
-Txt, BottomSheet, Spinner/Skeleton, EmptyState`. Domain components sit one level
-up: `RideCard, DriverCard, RouteLine, MapView`. Import them from `@/components`.
+Txt, Gradient, BottomSheet, Spinner/Skeleton, EmptyState`. Domain components sit
+one level up: `RideCard, DriverCard, RouteLine, MapView`. Import them from
+`@/components`.
 
-> **`MapView` is a stylised placeholder**, not a real tile map. Real maps
-> (react-native-maps / Leaflet) don't build on web, so for now it draws a
-> schematic route + an animated driver marker. It's isolated in one file, ready
-> to swap in Phase 8.
+Brand **gradients** live in `theme.gradients` and are applied through the
+`<Gradient>` component (a thin wrapper over `expo-linear-gradient`) — used on the
+splash/login logo, the wallet balance card, the driver earnings card and the
+primary `Button`. The primary button also has a press-scale micro-animation
+(Reanimated) and a colored shadow (`shadow.primary`).
+
+### The map is real (OpenStreetMap via Leaflet)
+`MapView` is a **real map**, free and key-less, and it's **platform-split** so it
+works everywhere:
+
+- **`src/components/map/MapView.tsx`** (native) — renders Leaflet inside a
+  `react-native-webview`. Runs in **Expo Go**, no native build needed.
+- **`src/components/map/MapView.web.tsx`** (web) — the same map via
+  `react-leaflet`.
+
+Metro automatically serves the right file per platform; screens just import one
+`MapView` from `@/components`. Both share `mapShared.ts` (the prop type, the
+linear-interpolation driver helper, and an Accra fallback for screens that don't
+carry coordinates yet, like the driver navigation views). The driver marker moves
+as the `progress` prop (0→1) changes — on native via `injectJavaScript` so the
+map never reloads, on web by re-rendering the marker.
 
 ---
 
@@ -264,7 +282,7 @@ code works at the OTP screens; the data is all mock.
 | Connect a real backend | `src/services/*` (+ flip `USE_MOCK_API`) |
 | Add a screen | a new file in `app/…` |
 | Change brand look | `src/theme/index.ts` |
-| Add real maps | `src/components/MapView.tsx` |
+| Tune the map (upgrade to react-native-maps, add a tile key, etc.) | `src/components/map/*` |
 | Real-time chat / tracking | swap the polling in `communityService` / `useTripTracking` for WebSockets |
 | Add a new data shape | `src/types/` then the service + mock |
 

@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { StyleSheet, TextInput, View } from 'react-native';
-import { colors, fontSize, fontWeight, radii } from '@/theme';
+import { colors, fonts, fontSize, radii } from '@/theme';
 
 interface Props {
   value: string;
@@ -53,14 +53,14 @@ const styles = StyleSheet.create({
   box: {
     flex: 1,
     aspectRatio: 1,
-    maxWidth: 52,
+    maxWidth: 54,
     borderWidth: 1.5,
     borderColor: colors.border,
     borderRadius: radii.md,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceAlt,
     fontSize: fontSize['2xl'],
-    fontWeight: fontWeight.bold,
+    fontFamily: fonts.bold,
     color: colors.text,
   },
-  boxFilled: { borderColor: colors.primary, backgroundColor: colors.lightGreen },
+  boxFilled: { borderColor: colors.primary, backgroundColor: colors.surface },
 });

@@ -1,8 +1,10 @@
 import { ActivityIndicator, Pressable, StyleSheet, Text, View, type ViewStyle } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import type { ReactNode } from 'react';
-import { colors, fontSize, fontWeight, radii, spacing } from '@/theme';
+import { colors, fonts, fontSize, radii, shadow, spacing } from '@/theme';
+import { Gradient } from './Gradient';
 
-type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger';
+type Variant = 'primary' | 'secondary' | 'outline' | 'ghost' | 'danger' | 'dark';
 type Size = 'sm' | 'md' | 'lg';
 
 interface Props {
@@ -16,6 +18,8 @@ interface Props {
   icon?: ReactNode;
   style?: ViewStyle;
 }
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function Button({
   label,
@@ -31,58 +35,72 @@ export function Button({
   const v = variantStyles[variant];
   const s = sizeStyles[size];
   const isDisabled = disabled || loading;
+  const isGradient = variant === 'primary';
+
+  const scale = useSharedValue(1);
+  const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  const inner = loading ? (
+    <ActivityIndicator color={v.fg} />
+  ) : (
+    <View style={styles.row}>
+      <Text style={[styles.label, { color: v.fg, fontSize: s.fs }]}>{label}</Text>
+      {icon}
+    </View>
+  );
+
+  const padding = { paddingVertical: s.py, paddingHorizontal: spacing.xl };
 
   return (
-    <Pressable
+    <AnimatedPressable
       onPress={onPress}
       disabled={isDisabled}
-      style={({ pressed }) => [
+      onPressIn={() => (scale.value = withTiming(0.97, { duration: 90 }))}
+      onPressOut={() => (scale.value = withTiming(1, { duration: 140 }))}
+      style={[
+        animated,
         styles.base,
-        { backgroundColor: v.bg, borderColor: v.border, paddingVertical: s.py, borderRadius: radii.md },
         fullWidth && styles.fullWidth,
-        pressed && !isDisabled && styles.pressed,
+        (variant === 'primary' || variant === 'dark') && !isDisabled && (variant === 'primary' ? shadow.primary : shadow.card),
         isDisabled && styles.disabled,
         style,
       ]}
       accessibilityRole="button"
       accessibilityLabel={label}
     >
-      {loading ? (
-        <ActivityIndicator color={v.fg} />
+      {isGradient ? (
+        <Gradient name="primary" style={[styles.fill, padding]}>
+          {inner}
+        </Gradient>
       ) : (
-        <View style={styles.row}>
-          {icon}
-          <Text style={[styles.label, { color: v.fg, fontSize: s.fs }]}>{label}</Text>
+        <View style={[styles.fill, padding, { backgroundColor: v.bg, borderColor: v.border, borderWidth: v.border === 'transparent' ? 0 : 1.5 }]}>
+          {inner}
         </View>
       )}
-    </Pressable>
+    </AnimatedPressable>
   );
 }
 
 const variantStyles: Record<Variant, { bg: string; fg: string; border: string }> = {
-  primary: { bg: colors.primary, fg: colors.white, border: colors.primary },
-  secondary: { bg: colors.lightGreen, fg: colors.primaryDark, border: colors.lightGreen },
-  outline: { bg: 'transparent', fg: colors.primary, border: colors.primary },
-  ghost: { bg: 'transparent', fg: colors.text, border: 'transparent' },
+  primary: { bg: colors.primary, fg: colors.onPrimary, border: colors.primary },
+  secondary: { bg: colors.lightGreen, fg: colors.forest, border: colors.lightGreen },
+  outline: { bg: colors.surface, fg: colors.text, border: colors.border },
+  ghost: { bg: 'transparent', fg: colors.textMuted, border: 'transparent' },
   danger: { bg: colors.error, fg: colors.white, border: colors.error },
+  dark: { bg: colors.textStrong, fg: colors.white, border: colors.textStrong },
 };
 
 const sizeStyles: Record<Size, { py: number; fs: number }> = {
-  sm: { py: spacing.sm, fs: fontSize.sm },
-  md: { py: spacing.md + 2, fs: fontSize.md },
-  lg: { py: spacing.lg, fs: fontSize.lg },
+  sm: { py: 10, fs: fontSize.sm },
+  md: { py: 16, fs: fontSize.md },
+  lg: { py: 18, fs: fontSize.lg },
 };
 
 const styles = StyleSheet.create({
-  base: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    paddingHorizontal: spacing.lg,
-  },
+  base: { borderRadius: radii.md },
   fullWidth: { alignSelf: 'stretch' },
+  fill: { alignItems: 'center', justifyContent: 'center', borderRadius: radii.md },
   row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  label: { fontWeight: fontWeight.semibold },
-  pressed: { opacity: 0.85 },
-  disabled: { opacity: 0.5 },
+  label: { fontFamily: fonts.bold },
+  disabled: { opacity: 0.45 },
 });

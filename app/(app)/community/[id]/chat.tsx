@@ -1,22 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  FlatList,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  StyleSheet,
-  TextInput,
-  View,
-} from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { FlatList, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
-import { Send } from 'lucide-react-native';
-import { Avatar, Header, RideCard, Screen, Txt } from '@/components';
+import { ArrowRight, BellOff, Car, CheckCheck, ChevronLeft, Plus, Send, Smile } from 'lucide-react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Avatar, Txt } from '@/components';
 import { communityService } from '@/services/communityService';
 import { rides } from '@/mocks/data';
 import type { ChatMessage } from '@/types';
-import { clockTime } from '@/utils/format';
-import { colors, radii, spacing } from '@/theme';
+import { clockTime, ghsCompact } from '@/utils/format';
+import { colors, fonts, fontSize, radii, shadow, spacing } from '@/theme';
 
 export default function GroupChat() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -27,9 +20,7 @@ export default function GroupChat() {
   const [text, setText] = useState('');
   const listRef = useRef<FlatList>(null);
 
-  useEffect(() => {
-    if (data) setMessages(data);
-  }, [data]);
+  useEffect(() => { if (data) setMessages(data); }, [data]);
 
   async function send() {
     const body = text.trim();
@@ -41,109 +32,106 @@ export default function GroupChat() {
   }
 
   return (
-    <Screen padded={false} edges={['top', 'bottom']}>
-      <Header
-        title={group?.name ?? 'Group chat'}
-        subtitle={group ? `${group.memberCount.toLocaleString()} members · ${group.route}` : undefined}
-      />
+    <SafeAreaView style={styles.safe} edges={['top', 'bottom']}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} hitSlop={8}><ChevronLeft size={24} color={colors.text} /></Pressable>
+        <View style={styles.headerCenter}>
+          <Txt variant="h3" numberOfLines={1}>{group?.name ?? 'Group chat'}</Txt>
+          <Txt variant="caption">{group ? `${group.memberCount} Members · 3 Online` : ''}</Txt>
+        </View>
+        <BellOff size={20} color={colors.textMuted} />
+      </View>
+
       <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={8}>
         <FlatList
           ref={listRef}
           data={messages}
           keyExtractor={(m) => m.id}
           contentContainerStyle={styles.messages}
+          ListHeaderComponent={<View style={styles.dayWrap}><View style={styles.dayPill}><Txt variant="caption">Today</Txt></View></View>}
           renderItem={({ item }) => <MessageBubble message={item} />}
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
         />
+
         <View style={styles.inputBar}>
-          <TextInput
-            value={text}
-            onChangeText={setText}
-            placeholder="Message the group…"
-            placeholderTextColor={colors.textMuted}
-            style={styles.input}
-            multiline
-            onSubmitEditing={send}
-          />
-          <Pressable onPress={send} style={[styles.sendBtn, !text.trim() && styles.sendDisabled]} disabled={!text.trim()}>
-            <Send size={18} color={colors.white} />
+          <Pressable style={styles.plus}><Plus size={20} color={colors.textMuted} /></Pressable>
+          <View style={styles.inputWrap}>
+            <TextInput value={text} onChangeText={setText} placeholder="Type a message…" placeholderTextColor={colors.textLight} style={styles.input} multiline onSubmitEditing={send} />
+            <Smile size={20} color={colors.textMuted} />
+          </View>
+          <Pressable onPress={send} style={[styles.send, !text.trim() && styles.sendDisabled]} disabled={!text.trim()}>
+            <Send size={18} color={colors.onPrimary} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
-    </Screen>
+    </SafeAreaView>
   );
 }
 
 function MessageBubble({ message }: { message: ChatMessage }) {
   const ride = message.rideCardId ? rides.find((r) => r.id === message.rideCardId) : undefined;
 
-  if (ride) {
+  if (message.isMe) {
     return (
-      <View style={[styles.row, message.isMe ? styles.rowMe : styles.rowOther]}>
-        <View style={styles.rideWrap}>
-          {!message.isMe ? <Txt variant="caption" style={styles.author}>{message.authorName}</Txt> : null}
-          <RideCard ride={ride} compact />
-          <Txt variant="caption" style={styles.time}>{clockTime(message.sentAt)}</Txt>
+      <View style={styles.meRow}>
+        <View style={styles.meBubble}>
+          <Txt variant="body" color={colors.white}>{message.text}</Txt>
+        </View>
+        <View style={styles.meMeta}>
+          <Txt variant="caption">{clockTime(message.sentAt)}</Txt>
+          <CheckCheck size={14} color={colors.primary} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.row, message.isMe ? styles.rowMe : styles.rowOther]}>
-      {!message.isMe ? <Avatar name={message.authorName} size={30} /> : null}
-      <View style={[styles.bubble, message.isMe ? styles.bubbleMe : styles.bubbleOther]}>
-        {!message.isMe ? <Txt variant="caption" color={colors.primary}>{message.authorName}</Txt> : null}
-        <Txt variant="body" color={message.isMe ? colors.white : colors.text}>
-          {message.text}
-        </Txt>
-        <Txt variant="caption" color={message.isMe ? 'rgba(255,255,255,0.7)' : colors.textMuted} style={styles.bubbleTime}>
-          {clockTime(message.sentAt)}
-        </Txt>
+    <View style={styles.otherRow}>
+      <Avatar name={message.authorName} size={32} />
+      <View style={styles.otherCol}>
+        <View style={styles.otherHead}>
+          <Txt variant="captionStrong">{message.authorName}</Txt>
+          <Txt variant="caption">· {clockTime(message.sentAt)}</Txt>
+        </View>
+        {message.text ? (
+          <View style={styles.otherBubble}><Txt variant="body">{message.text}</Txt></View>
+        ) : null}
+        {ride ? (
+          <View style={styles.rideCard}>
+            <View style={styles.rideIcon}><Car size={18} color={colors.forest} /></View>
+            <View style={styles.flex}>
+              <Txt variant="captionStrong">{ride.origin} → {ride.destination}</Txt>
+              <Txt variant="caption">{clockTime(ride.departAt)} · {ghsCompact(ride.pricePerSeat)}</Txt>
+            </View>
+            <ArrowRight size={18} color={colors.textMuted} />
+          </View>
+        ) : null}
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  safe: { flex: 1, backgroundColor: colors.background },
   flex: { flex: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingHorizontal: spacing.lg, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.borderLight, backgroundColor: colors.surface },
+  headerCenter: { flex: 1 },
   messages: { padding: spacing.lg, gap: spacing.md },
-  row: { flexDirection: 'row', alignItems: 'flex-end', gap: spacing.sm, maxWidth: '85%' },
-  rowMe: { alignSelf: 'flex-end', justifyContent: 'flex-end' },
-  rowOther: { alignSelf: 'flex-start' },
-  bubble: { padding: spacing.md, borderRadius: radii.lg, gap: 2 },
-  bubbleMe: { backgroundColor: colors.primary, borderBottomRightRadius: 4 },
-  bubbleOther: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderLight },
-  bubbleTime: { alignSelf: 'flex-end', marginTop: 2 },
-  rideWrap: { gap: spacing.xs, width: 300, maxWidth: '100%' },
-  author: { marginLeft: spacing.xs },
-  time: { marginLeft: spacing.xs },
-  inputBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    gap: spacing.sm,
-    padding: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.borderLight,
-    backgroundColor: colors.surface,
-  },
-  input: {
-    flex: 1,
-    maxHeight: 100,
-    backgroundColor: colors.background,
-    borderRadius: radii.lg,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    fontSize: 16,
-    color: colors.text,
-  },
-  sendBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radii.full,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  dayWrap: { alignItems: 'center', marginBottom: spacing.sm },
+  dayPill: { backgroundColor: colors.surfaceAlt, paddingHorizontal: spacing.md, paddingVertical: 4, borderRadius: radii.full },
+  otherRow: { flexDirection: 'row', gap: spacing.sm, maxWidth: '85%', alignSelf: 'flex-start' },
+  otherCol: { flex: 1, gap: 4 },
+  otherHead: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, marginLeft: spacing.xs },
+  otherBubble: { backgroundColor: colors.surface, padding: spacing.md, borderRadius: radii.md, borderTopLeftRadius: 4, ...shadow.card },
+  rideCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.surface, padding: spacing.md, borderRadius: radii.md, borderWidth: 1, borderColor: colors.borderLight },
+  rideIcon: { width: 36, height: 36, borderRadius: radii.sm, backgroundColor: colors.lightGreen, alignItems: 'center', justifyContent: 'center' },
+  meRow: { alignSelf: 'flex-end', maxWidth: '85%', gap: 2 },
+  meBubble: { backgroundColor: colors.primary, padding: spacing.md, borderRadius: radii.md, borderBottomRightRadius: 4 },
+  meMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 },
+  inputBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, padding: spacing.md, borderTopWidth: 1, borderTopColor: colors.borderLight, backgroundColor: colors.surface },
+  plus: { width: 40, height: 40, borderRadius: radii.full, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', justifyContent: 'center' },
+  inputWrap: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.surfaceAlt, borderRadius: radii.full, paddingHorizontal: spacing.lg },
+  input: { flex: 1, maxHeight: 100, fontFamily: fonts.regular, fontSize: fontSize.md, color: colors.text, paddingVertical: 12 },
+  send: { width: 44, height: 44, borderRadius: radii.full, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center' },
   sendDisabled: { opacity: 0.4 },
 });
