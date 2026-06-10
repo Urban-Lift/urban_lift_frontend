@@ -33,8 +33,13 @@ export default function WalletScreen() {
           <Txt variant="h3">Linked Accounts</Txt>
           <Txt variant="captionStrong" color={colors.forest}>Manage</Txt>
         </View>
+        {wallet.linkedAccounts.length === 0 ? (
+          <Card>
+            <Txt variant="caption" center>No payment methods linked yet.</Txt>
+          </Card>
+        ) : null}
         {wallet.linkedAccounts.map((a, i) => (
-          <Card key={a.provider} style={styles.linked}>
+          <Card key={a.id} style={styles.linked}>
             <ProviderIcon provider={a.provider} />
             <View style={styles.flex}>
               <Txt variant="bodyStrong">{a.label.split(' · ')[0]}</Txt>
@@ -56,10 +61,14 @@ export default function WalletScreen() {
           <Txt variant="h3">Recent Activity</Txt>
           <Txt variant="captionStrong" color={colors.forest}>View All</Txt>
         </View>
-        <Card padded={false}>
-          {wallet.transactions.map((t, i) => (
-            <TxnRow key={t.id} txn={t} last={i === wallet.transactions.length - 1} />
-          ))}
+        <Card padded={wallet.transactions.length === 0}>
+          {wallet.transactions.length === 0 ? (
+            <Txt variant="caption" center>No transactions yet.</Txt>
+          ) : (
+            wallet.transactions.map((t, i) => (
+              <TxnRow key={t.id} txn={t} last={i === wallet.transactions.length - 1} />
+            ))
+          )}
         </Card>
       </View>
     </Screen>

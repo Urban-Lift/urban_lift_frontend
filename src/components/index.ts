@@ -3,3 +3,4 @@ export { RideCard } from './RideCard';
 export { DriverCard } from './DriverCard';
 export { RouteLine } from './RouteLine';
 export { MapView } from './map';
+export { TabBarIcon } from './TabBarIcon';

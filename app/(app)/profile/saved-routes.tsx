@@ -15,6 +15,7 @@ import {
   Txt,
 } from '@/components';
 import { profileService } from '@/services/profileService';
+import { apiError } from '@/services/api';
 import type { SavedRoute } from '@/types';
 import { colors, spacing } from '@/theme';
 
@@ -29,19 +30,34 @@ export default function SavedRoutes() {
 
   const list = routes ?? data ?? [];
 
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string>();
+
   async function add() {
-    const created = await profileService.addSavedRoute({ label, pickup, dropoff });
-    setRoutes([...list, created]);
-    setAdding(false);
-    setLabel('');
-    setPickup('');
-    setDropoff('');
-    qc.invalidateQueries({ queryKey: ['saved-routes'] });
+    setSaving(true);
+    setError(undefined);
+    try {
+      const created = await profileService.addSavedRoute({ label, pickup, dropoff });
+      setRoutes([...list, created]);
+      setAdding(false);
+      setLabel('');
+      setPickup('');
+      setDropoff('');
+      qc.invalidateQueries({ queryKey: ['saved-routes'] });
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function remove(id: string) {
-    await profileService.deleteSavedRoute(id);
     setRoutes(list.filter((r) => r.id !== id));
+    try {
+      await profileService.deleteSavedRoute(id);
+    } catch {
+      qc.invalidateQueries({ queryKey: ['saved-routes'] });
+    }
   }
 
   if (isLoading) return <Spinner />;
@@ -74,7 +90,8 @@ export default function SavedRoutes() {
         <Input label="Label" placeholder="Home → Work" value={label} onChangeText={setLabel} />
         <Input label="Pickup" placeholder="Adenta" value={pickup} onChangeText={setPickup} />
         <Input label="Drop-off" placeholder="Airport City" value={dropoff} onChangeText={setDropoff} />
-        <Button label="Save route" onPress={add} disabled={!label || !pickup || !dropoff} />
+        {error ? <Txt variant="caption" color={colors.error}>{error}</Txt> : null}
+        <Button label="Save route" onPress={add} loading={saving} disabled={!label || !pickup || !dropoff} />
       </BottomSheet>
     </Screen>
   );

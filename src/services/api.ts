@@ -8,6 +8,7 @@
  *  • Phone numbers use **local** Ghana format (e.g. 0241234567).
  *  • The Render free dyno can cold-start, so timeouts are generous.
  */
+import { Platform } from 'react-native';
 import axios, { type AxiosRequestConfig } from 'axios';
 import { API_BASE_URL } from '@/config';
 
@@ -50,7 +51,6 @@ function toForm(data: Record<string, unknown>): string {
 }
 
 const FORM_HEADERS = { 'Content-Type': 'application/x-www-form-urlencoded' };
-const MULTIPART_HEADERS = { 'Content-Type': 'multipart/form-data' };
 
 export const http = {
   get: async <T = any>(path: string, params?: Record<string, unknown>, config?: AxiosRequestConfig) =>
@@ -59,14 +59,16 @@ export const http = {
   postForm: async <T = any>(path: string, data: Record<string, unknown>) =>
     (await api.post<T>(path, toForm(data), { headers: FORM_HEADERS })).data,
 
+  // Note: NO Content-Type header — axios/the platform generates the multipart
+  // boundary automatically. Setting it manually breaks parsing on the server.
   postMultipart: async <T = any>(path: string, form: FormData) =>
-    (await api.post<T>(path, form, { headers: MULTIPART_HEADERS })).data,
+    (await api.post<T>(path, form)).data,
 
   patchForm: async <T = any>(path: string, data: Record<string, unknown>) =>
     (await api.patch<T>(path, toForm(data), { headers: FORM_HEADERS })).data,
 
   patchMultipart: async <T = any>(path: string, form: FormData) =>
-    (await api.patch<T>(path, form, { headers: MULTIPART_HEADERS })).data,
+    (await api.patch<T>(path, form)).data,
 
   postQuery: async <T = any>(path: string, params: Record<string, unknown>) =>
     (await api.post<T>(path, undefined, { params })).data,
@@ -75,12 +77,21 @@ export const http = {
     (await api.delete<T>(path, data ? { data: toForm(data), headers: FORM_HEADERS } : undefined)).data,
 };
 
-/** Build a React Native multipart file part from a local uri. */
-export function filePart(uri: string, name = 'upload.jpg') {
-  const ext = uri.split('.').pop()?.toLowerCase() ?? 'jpg';
+/**
+ * Append an image to a FormData as a real file, cross-platform.
+ *  • Web: fetch the (blob:/data:) uri into a Blob and append it as a File.
+ *  • Native: append the RN `{ uri, name, type }` descriptor.
+ * Both produce a proper multipart file part — never a stringified object.
+ */
+export async function appendImage(form: FormData, field: string, uri: string, name = 'upload.jpg') {
+  const ext = name.split('.').pop()?.toLowerCase();
   const type = ext === 'png' ? 'image/png' : 'image/jpeg';
-  // RN FormData accepts this shape for files.
-  return { uri, name: `${name.replace(/\.\w+$/, '')}.${ext}`, type } as unknown as Blob;
+  if (Platform.OS === 'web') {
+    const blob = await (await fetch(uri)).blob();
+    form.append(field, blob, name);
+  } else {
+    form.append(field, { uri, name, type } as any);
+  }
 }
 
 /** Simulate latency for the remaining mock services. */

@@ -199,13 +199,16 @@ normalised in **one place** — `src/services/mappers.ts` (`mapRide`, `mapBookin
 real response uses different keys, fix it there and every screen benefits.
 
 **Live endpoints used:** auth (signup → phone OTP → email OTP → profile create),
-passenger ride search/book/bookings/review/track/SOS, driver registration,
-and the public `geocode` / `reverse_geocode` / `ride/distance` helpers.
+ride search/book/bookings/review/track/SOS, **wallet** (balance, top up, payment
+methods), **saved routes**, **community** (groups, join, create, chat),
+**driver earnings**, **admin** (registrations, users), driver registration, and
+the public `geocode` / `reverse_geocode` / `ride/distance` helpers.
 
-**Still mock (no endpoint on the API yet)** — flagged in `src/config.ts` under
-`MOCK`: **wallet**, **community/chat**, **driver earnings & incoming requests**,
-**saved routes**, **notification settings**. These keep using `src/mocks/data.ts`
-so those screens still work; swap them to real calls when endpoints exist.
+**Still mock** — flagged in `src/config.ts` under `MOCK` (only three things the
+API doesn't expose): **driver incoming requests** (the API is offer-based —
+drivers post rides, passengers book them — so there's no request feed),
+**wallet transaction history** (balance + top up are live; there's no list
+endpoint), and **notification settings**.
 
 > **Auth is real SMS OTP now** — "any 6 digits" no longer works. You verify with
 > a real Ghana phone number; the API texts the code.

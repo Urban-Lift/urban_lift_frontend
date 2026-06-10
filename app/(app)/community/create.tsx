@@ -20,7 +20,7 @@ export default function CreateGroup() {
 
   async function create() {
     setSaving(true);
-    const group = await communityService.create({ name, route, description, isPrivate, coverColor: COVERS[Math.floor(Math.random() * COVERS.length)] });
+    const group = await communityService.create({ name, route, description });
     qc.setQueryData<CommunityGroup[]>(['groups'], (old) => [group, ...(old ?? [])]);
     setSaving(false);
     router.replace(`/community/${group.id}/chat`);

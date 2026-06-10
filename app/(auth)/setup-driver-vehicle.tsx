@@ -58,6 +58,7 @@ export default function SetupDriverVehicle() {
       login(
         {
           id: draft?.phone ?? '',
+          authId: authService.userIdFromToken(token ?? ''),
           role: 'driver',
           name: draft?.name ?? 'Driver',
           phone: draft?.phone ?? '',

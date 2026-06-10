@@ -7,7 +7,7 @@
  * Phone numbers must be LOCAL Ghana format, e.g. 0241234567.
  */
 import type { Role } from '@/types';
-import { http, filePart } from './api';
+import { http, appendImage } from './api';
 
 /** Decode a JWT payload (base64url) without verifying — just to read claims. */
 function decodeJwtPayload(token: string): any {
@@ -78,6 +78,11 @@ export const authService = {
     return role === 'driver' || role === 'passenger' || role === 'admin' ? role : undefined;
   },
 
+  /** The auth user id (`sub`) from the session JWT — matches chat authorship. */
+  userIdFromToken(token: string): string | undefined {
+    return decodeJwtPayload(token)?.sub;
+  },
+
   /** Fetch the current user's profile, or null if they haven't created one yet. */
   async getProfile(): Promise<any | null> {
     try {
@@ -106,7 +111,7 @@ export const authService = {
     form.append('full_name', input.fullName);
     form.append('emergency_number', input.emergencyNumber);
     if (input.email) form.append('email', input.email);
-    form.append('profile_pic', filePart(input.photoUri, 'profile.jpg'));
+    await appendImage(form, 'profile_pic', input.photoUri, 'profile.jpg');
     await http.postMultipart('/users/profile/create', form);
   },
 
@@ -115,7 +120,7 @@ export const authService = {
     if (input.fullName) form.append('full_name', input.fullName);
     if (input.emergencyNumber) form.append('emergency_number', input.emergencyNumber);
     if (input.email) form.append('email', input.email);
-    if (input.photoUri) form.append('profile_pic', filePart(input.photoUri, 'profile.jpg'));
+    if (input.photoUri) await appendImage(form, 'profile_pic', input.photoUri, 'profile.jpg');
     await http.patchMultipart('/users/profile/edit', form);
   },
 
@@ -143,10 +148,10 @@ export const authService = {
     form.append('car_model', input.carModel);
     form.append('car_color', input.carColor);
     form.append('car_year', String(input.carYear));
-    form.append('card_image', filePart(input.cardImageUri, 'card.jpg'));
-    form.append('driver_license', filePart(input.licenseUri, 'license.jpg'));
-    form.append('vehicle_insurance', filePart(input.insuranceUri, 'insurance.jpg'));
-    form.append('car_pic', filePart(input.carPicUri, 'car.jpg'));
+    await appendImage(form, 'card_image', input.cardImageUri, 'card.jpg');
+    await appendImage(form, 'driver_license', input.licenseUri, 'license.jpg');
+    await appendImage(form, 'vehicle_insurance', input.insuranceUri, 'insurance.jpg');
+    await appendImage(form, 'car_pic', input.carPicUri, 'car.jpg');
     await http.postMultipart('/drivers/registration/create', form);
   },
 };

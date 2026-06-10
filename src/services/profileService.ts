@@ -1,26 +1,39 @@
-/**
- * Profile + saved routes. Profile edits hit the real API; saved routes have no
- * backend endpoint yet, so they stay local (see MOCK.savedRoutes in config).
- */
+/** Profile edits + saved routes (live API). */
 import type { SavedRoute } from '@/types';
-import { savedRoutes } from '@/mocks/data';
-import { refId } from '@/utils/format';
+import { http } from './api';
+import { asList, mapSavedRoute } from './mappers';
 import { authService } from './authService';
-import { delay } from './api';
+import { geoService } from './geoService';
 
 export const profileService = {
   async updateProfile(patch: { fullName?: string; emergencyNumber?: string; email?: string; photoUri?: string }): Promise<void> {
     await authService.editProfile(patch);
   },
 
-  // ── Saved routes: no API endpoint yet (local only) ──────────────────────────
   async getSavedRoutes(): Promise<SavedRoute[]> {
-    return delay(savedRoutes, 300);
+    const res = await http.get('/passenger/saved-routes');
+    return asList(res?.saved_routes ? { data: res.saved_routes } : res).map(mapSavedRoute);
   },
+
+  /** Saving a route needs coordinates, so we geocode pickup + dropoff first. */
   async addSavedRoute(input: Omit<SavedRoute, 'id'>): Promise<SavedRoute> {
-    return delay({ id: refId('SR'), ...input }, 300);
+    const [from, to] = await Promise.all([geoService.geocode(input.pickup), geoService.geocode(input.dropoff)]);
+    if (!from || !to) throw new Error('Could not find one of those locations. Try a more specific name.');
+    await http.postForm('/passenger/saved-routes', {
+      route_name: input.label,
+      pickup_location: input.pickup,
+      dropoff_location: input.dropoff,
+      pickup_lat: from.coord.lat,
+      pickup_lng: from.coord.lng,
+      dropoff_lat: to.coord.lat,
+      dropoff_lng: to.coord.lng,
+    });
+    const list = await profileService.getSavedRoutes();
+    return list[list.length - 1] ?? { id: '', ...input };
   },
-  async deleteSavedRoute(_id: string): Promise<{ ok: true }> {
-    return delay({ ok: true }, 200);
+
+  async deleteSavedRoute(id: string): Promise<{ ok: true }> {
+    await http.del(`/passenger/saved-routes/${id}`);
+    return { ok: true };
   },
 };

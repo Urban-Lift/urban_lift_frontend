@@ -7,6 +7,7 @@ export interface SearchParams {
   origin?: string;
   destination?: string;
   seats?: number;
+  tripType?: 'one-way' | 'round';
 }
 
 const PROVIDER_TO_METHOD: Record<PaymentProvider, string> = {
@@ -17,12 +18,13 @@ const PROVIDER_TO_METHOD: Record<PaymentProvider, string> = {
 };
 
 export const rideService = {
-  /** Search available rides by pickup/destination. */
+  /** Search available rides. `trip_type` is required by the API. */
   async search(params: SearchParams): Promise<Ride[]> {
     const res = await http.get('/passenger/ride/search', {
-      pickup_location: params.origin,
-      dropoff_location: params.destination,
-      seats_needed: params.seats,
+      trip_type: params.tripType === 'round' ? 'round_trip' : 'one_way',
+      pickup_location: params.origin || undefined,
+      dropoff_location: params.destination || undefined,
+      available_seats: params.seats,
     });
     return asList(res).map(mapRide);
   },
@@ -42,14 +44,15 @@ export const rideService = {
     const res = await http.postForm('/passenger/ride/book', {
       ride_id: input.rideId,
       seats_booked: input.seats,
-      payment_method: PROVIDER_TO_METHOD[input.method ?? 'mtn'],
+      payment_method: input.method ? PROVIDER_TO_METHOD[input.method] : 'cash',
       pickup_location: input.pickup,
       dropoff_location: input.dropoff,
     });
-    // Some APIs return the created booking; otherwise refetch the list head.
-    if (res && (res.id || res.booking_id || res.ride)) return mapBooking(res);
+    // The book endpoint returns {message, distance_km, duration_min, total_price}
+    // (no booking row), so refetch and take the newest booking for this ride.
     const list = await rideService.myBookings();
-    return list[0];
+    const mine = list.filter((b) => b.ride.id === input.rideId);
+    return (mine[mine.length - 1] ?? list[list.length - 1] ?? mapBooking(res)) as Booking;
   },
 
   async myBookings(): Promise<Booking[]> {

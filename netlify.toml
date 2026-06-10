@@ -1,0 +1,9 @@
+[build]
+  command = "npm run build:web"
+  publish = "dist"
+
+# SPA fallback — expo-router handles routing on the client.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

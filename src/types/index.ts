@@ -34,6 +34,8 @@ export interface Vehicle {
 
 export interface User {
   id: string;
+  /** Supabase auth user id (the `sub` JWT claim) — used to match chat authorship. */
+  authId?: string;
   role: Role;
   name: string;
   phone: string;
@@ -114,10 +116,17 @@ export interface Transaction {
   status: 'completed' | 'pending' | 'failed';
 }
 
+export interface PaymentMethod {
+  id: number;
+  provider: PaymentProvider;
+  label: string;
+  accountNumber?: string;
+}
+
 export interface Wallet {
   balance: number;
   changePct: number; // % change vs last period (for the +% badge)
-  linkedAccounts: { provider: PaymentProvider; label: string }[];
+  linkedAccounts: PaymentMethod[];
   transactions: Transaction[];
 }
 

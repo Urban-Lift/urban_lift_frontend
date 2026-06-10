@@ -29,9 +29,9 @@ export default function AppLayout() {
   const seg2 = segments[2] ?? ''; // tab/screen name when inside "(tabs)"
   const home = homeRouteFor(role);
 
-  // Admins live only in /admin; everyone else is kept out of it.
-  if (role === 'admin' && seg1 !== 'admin') return <Redirect href={home} />;
-  if (role !== 'admin' && seg1 === 'admin') return <Redirect href={home} />;
+  // Admins live only in the (admin) area; everyone else is kept out of it.
+  if (role === 'admin' && seg1 !== '(admin)') return <Redirect href={home} />;
+  if (role !== 'admin' && seg1 === '(admin)') return <Redirect href={home} />;
 
   // Cross-role stack areas.
   if (role === 'driver' && PASSENGER_ONLY.includes(seg1)) return <Redirect href={home} />;

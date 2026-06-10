@@ -20,7 +20,7 @@ export default function PassengerHome() {
   const [dayIdx, setDayIdx] = useState(0);
 
   function search() {
-    setSearchParams({ origin: origin || undefined, destination: destination || undefined, seats });
+    setSearchParams({ origin: origin || undefined, destination: destination || undefined, seats, tripType });
     router.push('/rides');
   }
 

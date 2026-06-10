@@ -230,8 +230,8 @@ export const wallet: Wallet = {
   balance: 87.5,
   changePct: 12,
   linkedAccounts: [
-    { provider: 'mtn', label: 'MTN MoMo · 024 •••• 21' },
-    { provider: 'vodafone', label: 'Vodafone Cash · 050 •••• 88' },
+    { id: 1, provider: 'mtn', label: 'MTN MoMo · 024 •••• 21' },
+    { id: 2, provider: 'vodafone', label: 'Telecel Cash · 050 •••• 88' },
   ],
   transactions,
 };

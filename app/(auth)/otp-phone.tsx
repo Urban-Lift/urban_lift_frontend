@@ -42,7 +42,7 @@ export default function OtpPhone() {
         router.replace(homeRouteFor(user.role));
       } else if (role === 'admin') {
         login({ id: phone, role: 'admin', name: 'Admin', phone, rating: 5 }, token);
-        router.replace('/admin');
+        router.replace('/overview');
       } else {
         // Profile setup must precede email verification (backend looks the user
         // up by email, which is only set during profile create).

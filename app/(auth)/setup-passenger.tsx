@@ -37,7 +37,7 @@ export default function SetupPassenger() {
       const emergencyLocal = toLocalPhone(emergency);
       await authService.createProfile({ fullName: name.trim(), emergencyNumber: emergencyLocal, email: email || undefined, photoUri });
       login(
-        { id: draft?.phone ?? '', role: 'passenger', name: name.trim(), phone: draft?.phone ?? '', email, rating: 5, avatarUrl: photoUri, emergencyContact: emergencyLocal },
+        { id: draft?.phone ?? '', authId: authService.userIdFromToken(token ?? ''), role: 'passenger', name: name.trim(), phone: draft?.phone ?? '', email, rating: 5, avatarUrl: photoUri, emergencyContact: emergencyLocal },
         token ?? '',
       );
       router.replace('/home');
