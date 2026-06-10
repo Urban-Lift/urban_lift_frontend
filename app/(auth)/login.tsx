@@ -6,6 +6,7 @@ import { Button, Header, Screen, Segmented, Txt } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
 import { apiError } from '@/services/api';
+import { establishSession } from '@/features/auth/session';
 import { toLocalPhone } from '@/utils/format';
 import type { Role } from '@/types';
 import { colors, fonts, fontSize, radii, spacing } from '@/theme';
@@ -17,9 +18,25 @@ export default function Login() {
   const [role, setRole] = useState<Role>('passenger');
   const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string>();
 
   const valid = phone.replace(/\D/g, '').length >= 9;
+
+  async function onGoogle() {
+    setGoogleLoading(true);
+    setError(undefined);
+    try {
+      const token = await authService.signInWithGoogle(role);
+      if (!token) return; // cancelled
+      const route = await establishSession(token, role);
+      router.replace(route as never);
+    } catch (e) {
+      setError(apiError(e));
+    } finally {
+      setGoogleLoading(false);
+    }
+  }
 
   async function onContinue() {
     setLoading(true);
@@ -100,8 +117,9 @@ export default function Login() {
         <Button
           label="Login with Google"
           variant="outline"
+          loading={googleLoading}
           icon={<View style={styles.gIcon}><Txt style={styles.gText}>G</Txt></View>}
-          onPress={() => {}}
+          onPress={onGoogle}
         />
 
         <Txt variant="caption" center style={styles.terms}>

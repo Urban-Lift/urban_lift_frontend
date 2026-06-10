@@ -6,14 +6,11 @@ import { Button, Header, OTPInput, Screen, Txt } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { authService } from '@/services/authService';
 import { apiError } from '@/services/api';
-import { mapProfile } from '@/services/mappers';
-import { homeRouteFor } from '@/utils/routes';
+import { establishSession } from '@/features/auth/session';
 import { colors, radii, spacing } from '@/theme';
 
 export default function OtpPhone() {
   const draft = useAuthStore((s) => s.draft);
-  const setSessionToken = useAuthStore((s) => s.setSessionToken);
-  const login = useAuthStore((s) => s.login);
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string>();
@@ -31,23 +28,8 @@ export default function OtpPhone() {
     const phone = draft?.phone ?? '';
     try {
       const token = await authService.verifyPhoneOtp(phone, code);
-      setSessionToken(token);
-      const role = authService.roleFromToken(token) ?? draft?.role ?? 'passenger';
-
-      // Already onboarded? Go straight home. Otherwise finish profile setup.
-      const profile = await authService.getProfile();
-      if (profile) {
-        const user = mapProfile(profile, role, phone);
-        login(user, token);
-        router.replace(homeRouteFor(user.role));
-      } else if (role === 'admin') {
-        login({ id: phone, role: 'admin', name: 'Admin', phone, rating: 5 }, token);
-        router.replace('/overview');
-      } else {
-        // Profile setup must precede email verification (backend looks the user
-        // up by email, which is only set during profile create).
-        router.replace(role === 'driver' ? '/setup-driver' : '/setup-passenger');
-      }
+      const route = await establishSession(token, draft?.role ?? 'passenger', phone);
+      router.replace(route as never);
     } catch (e) {
       setError(apiError(e));
     } finally {

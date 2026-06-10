@@ -60,6 +60,12 @@ export const rideService = {
     return asList(res).map(mapBooking);
   },
 
+  /** Completed ride history (richer — joins ride details for passengers). */
+  async history(): Promise<Booking[]> {
+    const res = await http.get('/rides/history');
+    return asList(res?.completed_rides ? { data: res.completed_rides } : res).map(mapBooking);
+  },
+
   async cancel(_bookingId: string): Promise<{ ok: true }> {
     // No cancel endpoint exposed yet; treated as a no-op success.
     return { ok: true };

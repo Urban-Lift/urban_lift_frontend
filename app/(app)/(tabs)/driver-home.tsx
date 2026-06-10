@@ -2,7 +2,7 @@ import { Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { router } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Car, Clock, LocateFixed, Zap } from 'lucide-react-native';
+import { ArrowDownLeft, Bell, Car, Clock, LocateFixed, Zap } from 'lucide-react-native';
 import { Avatar, Button, Card, Gradient, MapView, Spinner, Txt } from '@/components';
 import { useAuthStore } from '@/store/authStore';
 import { useDriverStore } from '@/store/driverStore';
@@ -18,9 +18,12 @@ export default function DriverDashboard() {
 
   const { data: stats } = useQuery({ queryKey: ['driver-stats'], queryFn: driverService.getStats });
   const { data: requests } = useQuery({ queryKey: ['incoming'], queryFn: driverService.incomingRequests });
+  const { data: notifs } = useQuery({ queryKey: ['driver-notifications'], queryFn: driverService.notifications });
+  const { data: earnings } = useQuery({ queryKey: ['driver-transactions'], queryFn: driverService.transactions });
 
   if (!stats) return <Spinner />;
   const req = requests?.[0];
+  const unread = (notifs ?? []).filter((n) => !n.isRead).length;
 
   return (
     <View style={styles.root}>
@@ -31,9 +34,15 @@ export default function DriverDashboard() {
               <Txt variant="caption" color={colors.lightGreen}>Total Earnings Today</Txt>
               <Txt variant="display" color={colors.white}>{ghs(stats.todayEarnings)}</Txt>
             </View>
-            <Pressable style={styles.avatarBtn} onPress={() => router.push('/profile')}>
-              <Avatar name={user?.name ?? 'Driver'} uri={user?.avatarUrl} size={44} />
-            </Pressable>
+            <View style={styles.headerRight}>
+              <Pressable style={styles.bellBtn} onPress={() => router.push('/driver/notifications')}>
+                <Bell size={20} color={colors.white} />
+                {unread > 0 ? <View style={styles.bellDot} /> : null}
+              </Pressable>
+              <Pressable style={styles.avatarBtn} onPress={() => router.push('/profile')}>
+                <Avatar name={user?.name ?? 'Driver'} uri={user?.avatarUrl} size={44} />
+              </Pressable>
+            </View>
           </View>
 
           <View style={styles.onlineCard}>
@@ -129,6 +138,26 @@ export default function DriverDashboard() {
             <StatCard icon={<Car size={20} color={colors.info} />} bg={colors.infoLight} value={String(stats.todayTrips)} label="Total Trips" />
             <StatCard icon={<Clock size={20} color={colors.gold} />} bg={colors.warningLight} value={`${stats.todayHours}h`} label="Hours Worked" />
           </View>
+
+          <Txt variant="h3" style={styles.statsTitle}>Recent Earnings</Txt>
+          <Card padded={(earnings ?? []).length === 0}>
+            {(earnings ?? []).length === 0 ? (
+              <Txt variant="caption" center>No completed trips yet.</Txt>
+            ) : (
+              earnings!.slice(0, 5).map((t, i, arr) => (
+                <View key={t.id} style={[styles.earnRow, i < arr.length - 1 && styles.earnDivider]}>
+                  <View style={styles.earnIcon}>
+                    <ArrowDownLeft size={18} color={colors.forest} />
+                  </View>
+                  <View style={styles.flex}>
+                    <Txt variant="bodyStrong" numberOfLines={1}>{t.label}</Txt>
+                    <Txt variant="caption">{new Date(t.date).toLocaleDateString()}</Txt>
+                  </View>
+                  <Txt variant="bodyStrong" color={colors.forest}>+ {ghs(Math.abs(t.amount))}</Txt>
+                </View>
+              ))
+            )}
+          </Card>
         </View>
       </ScrollView>
     </View>
@@ -150,7 +179,13 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: spacing['3xl'] },
   header: { paddingHorizontal: spacing.xl, paddingBottom: spacing.xl, borderBottomLeftRadius: radii['2xl'], borderBottomRightRadius: radii['2xl'], gap: spacing.lg },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  bellBtn: { width: 40, height: 40, borderRadius: radii.full, backgroundColor: 'rgba(255,255,255,0.14)', alignItems: 'center', justifyContent: 'center' },
+  bellDot: { position: 'absolute', top: 8, right: 9, width: 9, height: 9, borderRadius: 5, backgroundColor: colors.gold, borderWidth: 1.5, borderColor: colors.forest },
   avatarBtn: { borderWidth: 2, borderColor: 'rgba(255,255,255,0.3)', borderRadius: radii.full },
+  earnRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, padding: spacing.lg },
+  earnDivider: { borderBottomWidth: 1, borderBottomColor: colors.borderLight },
+  earnIcon: { width: 38, height: 38, borderRadius: radii.full, backgroundColor: colors.lightGreen, alignItems: 'center', justifyContent: 'center' },
   onlineCard: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: radii.md, padding: spacing.md },
   zap: { width: 36, height: 36, borderRadius: radii.sm, alignItems: 'center', justifyContent: 'center' },
   flex: { flex: 1 },

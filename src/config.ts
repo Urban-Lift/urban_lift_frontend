@@ -11,8 +11,6 @@ export const API_BASE_URL =
 export const MOCK = {
   /** Driver "incoming ride requests" — the API is offer-based (no such endpoint). */
   driverRequests: true,
-  /** Wallet transaction history — no list endpoint (balance + topup are live). */
-  walletTransactions: true,
-  /** Notification settings — no endpoint yet. */
+  /** Passenger notification settings — no endpoint (driver notifications do exist). */
   notifications: true,
 } as const;

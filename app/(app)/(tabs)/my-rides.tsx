@@ -27,13 +27,18 @@ type Tab = 'upcoming' | 'past';
 export default function MyRides() {
   const [tab, setTab] = useState<Tab>('upcoming');
   const { data, isLoading } = useQuery({ queryKey: ['bookings'], queryFn: rideService.myBookings });
+  const { data: history, isLoading: historyLoading } = useQuery({
+    queryKey: ['ride-history'],
+    queryFn: rideService.history,
+    enabled: tab === 'past',
+  });
 
   const filtered = useMemo(() => {
-    const list = data ?? [];
-    return tab === 'upcoming'
-      ? list.filter((b) => b.status === 'confirmed' || b.status === 'pending')
-      : list.filter((b) => b.status === 'completed' || b.status === 'cancelled');
-  }, [data, tab]);
+    if (tab === 'past') return history ?? [];
+    return (data ?? []).filter((b) => b.status === 'confirmed' || b.status === 'pending');
+  }, [data, history, tab]);
+
+  const loading = tab === 'past' ? historyLoading : isLoading;
 
   return (
     <Screen padded={false}>
@@ -49,7 +54,7 @@ export default function MyRides() {
         />
       </View>
 
-      {isLoading ? (
+      {loading ? (
         <View style={styles.list}>
           <SkeletonCard />
           <SkeletonCard />

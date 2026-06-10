@@ -18,6 +18,7 @@ import type {
   Ride,
   Role,
   SavedRoute,
+  Transaction,
   Trip,
   TripStatus,
   User,
@@ -102,9 +103,10 @@ export function mapRide(a: any): Ride {
 }
 
 export function mapBooking(a: any): Booking {
-  // A booking row carries pickup/dropoff/distance but no nested ride; its own
-  // `id` is the booking id, so seed the ride's id from `ride_id`.
-  const ride = a?.ride ? mapRide(a.ride) : mapRide({ ...a, id: pick(a, 'ride_id') });
+  // /ride/history joins the ride as `rides`; the plain booking list has no
+  // nested ride, so seed the ride id from `ride_id`.
+  const nested = a?.ride ?? a?.rides;
+  const ride = nested ? mapRide(nested) : mapRide({ ...a, id: pick(a, 'ride_id') });
   const seats = Number(pick(a, 'seats_booked', 'seats') ?? 1);
   return {
     id: String(pick(a, 'id', 'booking_id', '_id') ?? ''),
@@ -209,6 +211,35 @@ export function mapPaymentMethod(p: any): PaymentMethod {
     provider,
     label: `${pick(p, 'provider') ?? pick(p, 'method_type') ?? 'Account'} · ${masked}`.trim(),
     accountNumber: acct,
+  };
+}
+
+/**
+ * A ride transaction. For passengers it's a payment (debit); for drivers it's
+ * an earning (credit, labelled with the passenger's name).
+ */
+export function mapTransaction(t: any, credit = false): Transaction {
+  const route = [pick(t, 'pickup_location'), pick(t, 'dropoff_location')].filter(Boolean).join(' → ');
+  const who = credit ? pick(t, 'passenger_name') : pick(t, 'driver_name');
+  const price = Math.abs(Number(pick(t, 'total_price', 'amount') ?? 0));
+  return {
+    id: String(pick(t, 'booking_id', 'id') ?? Math.random()),
+    type: 'ride',
+    label: credit ? `${who ?? 'Passenger'} · ${route}` : route ? `Ride · ${route}` : `Ride · ${who ?? 'Trip'}`,
+    amount: credit ? price : -price,
+    date: pick(t, 'date', 'created_at') ?? new Date().toISOString(),
+    status: 'completed',
+  };
+}
+
+export function mapNotification(n: any): import('@/types').AppNotification {
+  return {
+    id: Number(pick(n, 'id')),
+    title: pick(n, 'title') ?? pick(n, 'type') ?? 'Notification',
+    message: pick(n, 'message', 'body') ?? '',
+    type: pick(n, 'type') ?? 'general',
+    isRead: Boolean(pick(n, 'is_read')),
+    createdAt: pick(n, 'created_at') ?? new Date().toISOString(),
   };
 }
 

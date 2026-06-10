@@ -168,6 +168,15 @@ export interface ChatMessage {
   isMe: boolean;
 }
 
+export interface AppNotification {
+  id: number;
+  title: string;
+  message: string;
+  type: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
 export interface DriverStats {
   online: boolean;
   todayEarnings: number;

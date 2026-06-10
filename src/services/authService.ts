@@ -6,8 +6,21 @@
  *
  * Phone numbers must be LOCAL Ghana format, e.g. 0241234567.
  */
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import type { Role } from '@/types';
 import { http, appendImage } from './api';
+
+/** Parse access_token / refresh_token out of an OAuth redirect (fragment or query). */
+function parseTokens(url: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const tail = url.split('#')[1] ?? url.split('?')[1] ?? '';
+  for (const kv of tail.split('&')) {
+    const [k, v] = kv.split('=');
+    if (k) out[decodeURIComponent(k)] = decodeURIComponent(v ?? '');
+  }
+  return out;
+}
 
 /** Decode a JWT payload (base64url) without verifying — just to read claims. */
 function decodeJwtPayload(token: string): any {
@@ -81,6 +94,34 @@ export const authService = {
   /** The auth user id (`sub`) from the session JWT — matches chat authorship. */
   userIdFromToken(token: string): string | undefined {
     return decodeJwtPayload(token)?.sub;
+  },
+
+  /**
+   * Google sign-in. Gets the Supabase OAuth URL from the API, opens it in an
+   * auth session, captures the returned tokens and exchanges them for a session.
+   * Returns the session token, or null if cancelled.
+   *
+   * Requires the backend's GOOGLE_REDIRECT_URL (and Supabase allowed redirect
+   * URLs) to point back at this app's redirect (`Linking.createURL('auth-callback')`).
+   */
+  async signInWithGoogle(role: Role): Promise<string | null> {
+    const startRes = await http.postForm('/users/auth/google', { role });
+    const authUrl = startRes?.url;
+    if (!authUrl) throw new Error('Could not start Google sign-in');
+
+    const returnUrl = Linking.createURL('auth-callback');
+    const result = await WebBrowser.openAuthSessionAsync(authUrl, returnUrl);
+    if (result.type !== 'success' || !result.url) return null;
+
+    const tokens = parseTokens(result.url);
+    if (!tokens.access_token || !tokens.refresh_token) return null;
+
+    const cbRes = await http.postForm('/users/auth/google/callback', {
+      access_token: tokens.access_token,
+      refresh_token: tokens.refresh_token,
+      role,
+    });
+    return extractToken(cbRes) || tokens.access_token;
   },
 
   /** Fetch the current user's profile, or null if they haven't created one yet. */
